@@ -113,7 +113,20 @@ canvas.addEventListener('mousemove', (e) => {
     mousePos.x = e.clientX - rect.left;
     mousePos.y = rect.height - (e.clientY - rect.top); // 反转Y坐标
 });
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 
+function handleTouchMove(event) {
+    event.preventDefault(); // 防止默认的滚动等行为
+
+    if (event.touches.length > 0) {
+        const touch = event.touches[0]; // 获取第一个触摸点
+        const rect = canvas.getBoundingClientRect();
+
+        // 计算触摸点相对于画布的位置
+        mousePos.x = touch.clientX - rect.left;
+        mousePos.y = rect.height - (touch.clientY - rect.top); // 反转Y坐标
+    }
+}
 function initWebGL() {
     gl = canvas.getContext('webgl2');
     canvas.width = window.innerWidth;
