@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Vitro Media</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body, html {
+    height: 100%;
+    font-family: 'Verdana Pro Regular', Verdana, sans-serif;
+  }
+
+  .bg-image {
+    background-image: url('https://res.cloudinary.com/boredinheaven/image/upload/v1701011183/TemporarySoul001_szb0cv.png');
+    height: 100%;
+    width: 100%;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  .menu-button {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    color: white;
+  }
+
+  .menu-button:before {
+    content: '≡';
+    font-size: 2em;
+  }
+
+  .sidebar-menu {
+    position: fixed;
+    top: 40px;
+    right: -15%;
+    width: 15%;
+    height: 100%;
+    background-color: transparent;
+    padding: 20px;
+    transition: right 0.5s;
+    box-sizing: border-box;
+    color: #808080; /* 更淡的灰色 */
+    text-align: center;
+  }
+
+  .sidebar-menu a, .sidebar-menu div {
+    color: white; /* 更淡的灰色 */
+    text-decoration: none;
+    display: block;
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+
+  .sidebar-menu div.space {
+    height: 20px; /* 空白间隔的高度 */
+  }
+  
+  .menu-button.hide {
+    display: none;
+  }
+
+  .sidebar-menu.active {
+    right: 0;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="glCanvas"></canvas> <!-- 新增canvas元素 -->
+<button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
+<div class="sidebar-menu" id="sidebarMenu">
+  <a href="index.html">In Vitro Media</a>
+  <div class="space"></div> <!-- 空白间隔 -->
+  <a href="temporary-soul.html">Temporary Soul</a>
+  <a href="/standing-center">Standing at the center of the continental shelf</a>
+  <a href="/temporary-soul">Biography</a>
+</div>
+
+<script>
+        let gl;
+        let shaderProgram;
+        let positionAttributeLocation;
+        let positionBuffer;
+        let textureCoordBuffer;
+        let uTimeLocation;
+        let uResolutionLocation;
+        let texture1
+        let texture2
+        let uTextureLocation;
+        let uTexture1Location;
+        let uTexture2Location;
+        let mousePos = { x: 0, y: 0 }; // 在全局作用域中声明mousePos
+        let canvas = document.getElementById('glCanvas');
+        let uMouseLocation;
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mousePos.x = e.clientX - rect.left;
+    mousePos.y = rect.height - (e.clientY - rect.top); // 反转Y坐标
+});
+
+function initWebGL() {
+    gl = canvas.getContext('webgl2');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+
+
+
+  if (!gl) {
+    alert('无法初始化WebGL，您的浏览器或机器可能不支持。');
+    return;
+  }
+
+  // 顶点着色器
+const vertexShaderSource = `#version 300 es
+in vec4 aVertexPosition;
+out highp vec2 vTextureCoord;
+void main() {
+  gl_Position = aVertexPosition;
+  vTextureCoord = aVertexPosition.xy * 0.5 + 0.5;
+}`;
+
+  // 片段着色器
+const fragmentShaderSource = `#version 300 es
+precision mediump float;
+
+in vec4 aVertexPosition;
+out vec4 fragColor;
+in highp vec2 vTextureCoord;
+uniform vec2 uMouse;
+uniform float uTime;
+uniform vec2 u_resolution;
+uniform sampler2D uTexture1;
+uniform sampler2D uTexture2;
+void main()
+{
+    vec2 mouse=vec2(uMouse.x/u_resolution.x,uMouse.y/u_resolution.y);
+    mouse-=vec2(.5,.5);
+    mouse/=2.;
+    float rect=u_resolution.x/u_resolution.y;
+    vec2 I = vec2(vTextureCoord.x*rect,vTextureCoord.y) ; // 将纹理坐标调整为像素坐标
+    vec4 O; // 初始化输出颜色
+    for(O-=O; (O.r*1.5)<sin(texture(uTexture1, vTextureCoord/7.-(uTime*mouse+10000.)/O.r/3500.).r*10.); O+=.03)
+    {
+        if(O.r==0.06)
+        {
+            O+=texture(uTexture2,I-(uTime*mouse+10000.)/O.r/3500.*10.);
+        }
+    }
+    O=vec4(O.r,O.g,0.1,1.);
+    fragColor=O;
+
+}`;
+
+
+
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    shaderProgram = createShaderProgram(gl, vertexShader, fragmentShader);
+    uTimeLocation = gl.getUniformLocation(shaderProgram, 'uTime');
+    // 获取分辨率uniform的位置
+    uResolutionLocation = gl.getUniformLocation(shaderProgram, 'u_resolution');
+    uMouseLocation = gl.getUniformLocation(shaderProgram, 'uMouse');
+
+    uTexture1Location = gl.getUniformLocation(shaderProgram, 'uTexture1');
+    uTexture2Location = gl.getUniformLocation(shaderProgram, 'uTexture2');
+    positionBuffer = gl.createBuffer(); // 初始化positionBuffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    const positions = [
+        1.0, 1.0,
+        -1.0, 1.0,
+        1.0, -1.0,
+        -1.0, -1.0,
+    ];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+     texture1 = loadTexture('https://res.cloudinary.com/pleroma/image/upload/v1701100055/ground-3576916_1280_kdoopc.jpg', gl.TEXTURE0);
+     texture2 = loadTexture('https://res.cloudinary.com/pleroma/image/upload/v1701119628/580b57fcd9996e24bc43c325_ljxij3.png', gl.TEXTURE1);
+    
+     requestAnimationFrame(render);
+}
+
+function createShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    alert('着色器编译失败: ' + gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+
+  return shader;
+}
+
+function createShaderProgram(gl, vertexShader, fragmentShader) {
+  const shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert('无法初始化着色器程序: ' + gl.getProgramInfoLog(shaderProgram));
+    return null;
+  }
+
+  return shaderProgram;
+}
+   function loadTexture(url, textureUnit) {
+            const texture = gl.createTexture();
+            gl.activeTexture(textureUnit);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+
+            // 设置默认纹理
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                          new Uint8Array([0, 0, 255, 255]));
+
+            const image = new Image();
+            image.crossOrigin = 'anonymous';
+            image.onload = function() {
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                gl.generateMipmap(gl.TEXTURE_2D);
+            };
+            image.src = url;
+
+            return texture;
+        }
+
+
+function render(now) {
+    now/=1000.0
+    gl.uniform2f(uMouseLocation, mousePos.x, mousePos.y);
+
+    gl.useProgram(shaderProgram);
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform2f(uResolutionLocation, gl.canvas.width, gl.canvas.height);        // 设置分辨率uniform
+    gl.uniform1f(uTimeLocation, now); // 更新时间
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+               // 绑定纹理
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, texture1);
+            gl.uniform1i(uTexture1Location, 0);
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, texture2);
+            gl.uniform1i(uTexture2Location, 1);
+
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+
+
+
+    requestAnimationFrame(render); // 递归调用自身以持续渲染
+}
+
+
+function toggleMenu(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  var sidebarMenu = document.getElementById('sidebarMenu');
+  var menuButton = document.getElementById('menuButton');
+  
+  sidebarMenu.classList.toggle('active');
+  menuButton.classList.toggle('hide');
+}
+
+document.addEventListener('click', function(event) {
+  if (!event.target.closest('.sidebar-menu, .menu-button')) {
+    var sidebarMenu = document.getElementById('sidebarMenu');
+    var menuButton = document.getElementById('menuButton');
+    sidebarMenu.classList.remove('active');
+    menuButton.classList.remove('hide');
+  }
+});
+
+document.getElementById('sidebarMenu').addEventListener('click', function(event) {
+  event.stopPropagation();
+});
+
+window.onload = initWebGL;
+
+</script>
+
+</body>
+</html>
