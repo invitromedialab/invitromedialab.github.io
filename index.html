@@ -119,8 +119,9 @@ canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 window.addEventListener('resize', resizeCanvas, false);
 
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
     gl.viewport(0, 0, canvas.width, canvas.height);
     // 如果有需要，重新渲染场景
 }
@@ -138,8 +139,10 @@ function handleTouchMove(event) {
 }
 function initWebGL() {
     gl = canvas.getContext('webgl2');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // 考虑devicePixelRatio
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
 
 
 
