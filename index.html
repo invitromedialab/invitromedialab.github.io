@@ -176,7 +176,7 @@ void main() {
             O += texture2D(uTexture2, I - (uTime * mouse + 10000.0) / O.r / 3500.0 * 10.0);
         }
     }
-    O = vec4(O.r, O.g, 0.1, 1.0);
+    O = texture2D(uTexture2, I);
     gl_FragColor = O;
 }`;
 
