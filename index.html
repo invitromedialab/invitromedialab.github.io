@@ -128,7 +128,7 @@ function handleTouchMove(event) {
     }
 }
 function initWebGL() {
-    gl = canvas.getContext('webgl');
+    gl = canvas.getContext('webgl2');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -141,43 +141,44 @@ function initWebGL() {
   }
 
   // 顶点着色器
-const vertexShaderSource = `
-attribute vec4 aVertexPosition;
-varying highp vec2 vTextureCoord;
-
+const vertexShaderSource = `#version 300 es
+in vec4 aVertexPosition;
+out highp vec2 vTextureCoord;
 void main() {
-    gl_Position = aVertexPosition;
-    vTextureCoord = aVertexPosition.xy * 0.5 + 0.5;
+  gl_Position = aVertexPosition;
+  vTextureCoord = aVertexPosition.xy * 0.5 + 0.5;
 }`;
 
   // 片段着色器
-const fragmentShaderSource = `
+const fragmentShaderSource = `#version 300 es
 precision mediump float;
 
-varying highp vec2 vTextureCoord;
+in vec4 aVertexPosition;
+out vec4 fragColor;
+in highp vec2 vTextureCoord;
 uniform vec2 uMouse;
 uniform float uTime;
 uniform vec2 u_resolution;
 uniform sampler2D uTexture1;
 uniform sampler2D uTexture2;
-
-void main() {
-    vec2 mouse = vec2(uMouse.x / u_resolution.x, uMouse.y / u_resolution.y);
-    mouse -= vec2(0.5, 0.5);
-    mouse /= 2.0;
-    float rect = u_resolution.x / u_resolution.y;
-    vec2 I = vec2(vTextureCoord.x * rect, vTextureCoord.y); // 将纹理坐标调整为像素坐标
-    vec4 O = vec4(0.0); // 初始化输出颜色
-    for (float f = 0.0; f <= 1.0; f += 0.03) {
-        if ((O.r * 1.5) < sin(texture2D(uTexture1, I / 10.0 - (uTime * mouse + 10000.0) / O.r / 3500.0).r * 10.0)) {
-            O += vec4(0.03, 0.0, 0.0, 0.0);
-        }
-        if (O.r == 0.06) {
-            O += texture2D(uTexture2, I - (uTime * mouse + 10000.0) / O.r / 3500.0 * 10.0);
+void main()
+{
+    vec2 mouse=vec2(uMouse.x/u_resolution.x,uMouse.y/u_resolution.y);
+    mouse-=vec2(.5,.5);
+    mouse/=2.;
+    float rect=u_resolution.x/u_resolution.y;
+    vec2 I = vec2(vTextureCoord.x*rect,vTextureCoord.y) ; // 将纹理坐标调整为像素坐标
+    vec4 O; // 初始化输出颜色
+    for(O-=O; (O.r*1.5)<sin(texture(uTexture1, I/10.-(uTime*mouse+100.)/O.r/3500.).r*10.); O+=.03)
+    {
+        if(O.r==0.06)
+        {
+            O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/3500.*10.);
         }
     }
-    O = texture2D(uTexture2, I);
-    gl_FragColor = O;
+    O=vec4(O.r,O.g,0.1,1.);
+    fragColor=O;
+
 }`;
 
 
