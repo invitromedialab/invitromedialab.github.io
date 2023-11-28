@@ -142,6 +142,7 @@ function initWebGL() {
 
   // 顶点着色器
 const vertexShaderSource = `#version 300 es
+precision lowp float;
 in vec4 aVertexPosition;
 out highp vec2 vTextureCoord;
 void main() {
@@ -151,7 +152,7 @@ void main() {
 
   // 片段着色器
 const fragmentShaderSource = `#version 300 es
-precision mediump float;
+precision lowp float;
 
 in vec4 aVertexPosition;
 out vec4 fragColor;
