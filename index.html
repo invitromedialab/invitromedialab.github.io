@@ -171,7 +171,7 @@ void main()
     vec4 O; // 初始化输出颜色
     for(O-=O; (O.r*1.5)<sin(texture(uTexture1, I/10.-(uTime*mouse+100.)/O.r/3500.).r*10.); O+=.03)
     {
-        if(O.r>0.59&&O.r<0.61)
+        if(O.r==0.06)
         {
             O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/3500.*10.);
         }
