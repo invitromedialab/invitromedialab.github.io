@@ -132,14 +132,7 @@ function initWebGL() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-window.addEventListener('resize', resizeCanvas, false);
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    // 如果有需要，重新渲染场景
-}
 
 
   if (!gl) {
@@ -176,15 +169,16 @@ void main()
     float rect=u_resolution.x/u_resolution.y;
     vec2 I = vec2(vTextureCoord.x*rect,vTextureCoord.y) ; // 将纹理坐标调整为像素坐标
     vec4 O; // 初始化输出颜色
-    for(O=vec4(0.,0.,0.,0.); (O.r*3.)<sin(texture(uTexture1, I/10.-(uTime*mouse+100.)/O.r/1500.).r*10.); O+=.03)
+    for(O-=O; (O.r*1.5)<sin(texture(uTexture1, I/10.-(uTime*mouse+100.)/O.r/3500.).r*10.); O+=.03)
     {
         if(O.r==0.06)
         {
-            O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/1500.*10.);
+            O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/3500.*10.);
         }
     }
-    O=vec4(O.r.,O.g*2.0,O.b,1.0);
+    O=vec4(O.r,O.g,0.1,1.);
     fragColor=O;
+
 }`;
 
 
@@ -192,8 +186,6 @@ void main()
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     shaderProgram = createShaderProgram(gl, vertexShader, fragmentShader);
-    // 获取顶点属性位置
-    positionAttributeLocation = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
     uTimeLocation = gl.getUniformLocation(shaderProgram, 'uTime');
     // 获取分辨率uniform的位置
     uResolutionLocation = gl.getUniformLocation(shaderProgram, 'u_resolution');
