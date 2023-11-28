@@ -132,7 +132,14 @@ function initWebGL() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+window.addEventListener('resize', resizeCanvas, false);
 
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    // 如果有需要，重新渲染场景
+}
 
 
   if (!gl) {
@@ -185,6 +192,8 @@ void main()
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     shaderProgram = createShaderProgram(gl, vertexShader, fragmentShader);
+    // 获取顶点属性位置
+    positionAttributeLocation = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
     uTimeLocation = gl.getUniformLocation(shaderProgram, 'uTime');
     // 获取分辨率uniform的位置
     uResolutionLocation = gl.getUniformLocation(shaderProgram, 'u_resolution');
