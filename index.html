@@ -178,7 +178,7 @@ void main()
     float rect=u_resolution.x/u_resolution.y;
     vec2 I = vec2(vTextureCoord.x*rect,vTextureCoord.y) ; // 将纹理坐标调整为像素坐标
     vec4 O; // 初始化输出颜色
-    for(O=vec4(0.03,0.03,0.03,0.03); (O.r*3.5)<sin(texture(uTexture1, I-(uTime*mouse+100.)/(O.r)/2500.).r*10.); O+=.03)
+    for(O=vec4(0.03,0.03,0.03,0.03); (O.r*3.5)<sin(texture(uTexture1, I/10.-(uTime*mouse+100.)/(O.r)/2500.).r*10.); O+=.03)
     {
         if(O.r==0.06)
         {
