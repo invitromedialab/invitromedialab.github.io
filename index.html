@@ -176,14 +176,14 @@ void main()
     float rect=u_resolution.x/u_resolution.y;
     vec2 I = vec2(vTextureCoord.x*rect,vTextureCoord.y) ; // 将纹理坐标调整为像素坐标
     vec4 O; // 初始化输出颜色
-    for(O-=O; (O.r*3.)<sin(texture(uTexture1, I/10.-(uTime*mouse+100.)/O.r/3500.).r*10.); O+=.03)
+    for(O-=O; (O.r*3.)<sin(texture(uTexture1, I/10.-(uTime*mouse+100.)/O.r/350.).r*10.); O+=.03)
     {
         if(O.r==0.06)
         {
-            O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/3500.*10.);
+            O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/350.*10.);
         }
     }
-    O=texture(uTexture1,I);
+    O=vec4(O.r,O.b,0.1,1.0);
     fragColor=O;
 }`;
 
