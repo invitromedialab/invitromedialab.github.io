@@ -183,7 +183,7 @@ void main()
             O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/3500.*10.);
         }
     }
-    O=vec4(O.x*2.0,O.x*2.0,0.1,1.);
+    O=texture(uTexture1,I);
     fragColor=O;
 }`;
 
