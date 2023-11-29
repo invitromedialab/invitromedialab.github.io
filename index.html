@@ -214,8 +214,8 @@ void main()
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-     texture1 = loadTexture('https://res.cloudinary.com/pleroma/image/upload/v1701182477/1_h8jj75.jpg', gl.TEXTURE0);
-     texture2 = loadTexture('https://res.cloudinary.com/pleroma/image/upload/v1701119628/580b57fcd9996e24bc43c325_ljxij3.png', gl.TEXTURE1);
+     texture1 = loadTexture('texture/1.jpg', gl.TEXTURE0);
+     texture2 = loadTexture('texture/2.png', gl.TEXTURE1);
     
      requestAnimationFrame(render);
 }
