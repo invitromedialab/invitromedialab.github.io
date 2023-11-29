@@ -120,8 +120,8 @@ window.addEventListener('resize', resizeCanvas, false);
 
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth*dpr;
-    canvas.height = window.innerHeight*dpr;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     gl.viewport(0, 0, canvas.width, canvas.height);
     // 如果有需要，重新渲染场景
 }
@@ -140,8 +140,8 @@ function handleTouchMove(event) {
 function initWebGL() {
     gl = canvas.getContext('webgl2');
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth*dpr;
-    canvas.height = window.innerHeight*dpr;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
 
 
@@ -278,15 +278,15 @@ function render(now) {
     gl.enableVertexAttribArray(positionAttributeLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-    gl.uniform2f(uResolutionLocation, gl.canvas.width*dpr, gl.canvas.height*dpr);        // 设置分辨率uniform
+    gl.uniform2f(uResolutionLocation, gl.canvas.width, gl.canvas.height);        // 设置分辨率uniform
     gl.uniform1f(uTimeLocation, now); // 更新时间
-    gl.viewport(0, 0, gl.canvas.width*dpr, gl.canvas.height*dpr);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
                // 绑定纹理
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture1);
             gl.uniform1i(uTexture1Location, 0);
-            gl.viewport(0, 0, gl.canvas.width*dpr, gl.canvas.height*dpr);
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, texture2);
             gl.uniform1i(uTexture2Location, 1);
