@@ -120,8 +120,8 @@ window.addEventListener('resize', resizeCanvas, false);
 
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth/dpr;
-    canvas.height = window.innerHeight/dpr;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     gl.viewport(0, 0, canvas.width, canvas.height);
     // 如果有需要，重新渲染场景
 }
@@ -140,8 +140,8 @@ function handleTouchMove(event) {
 function initWebGL() {
     gl = canvas.getContext('webgl2');
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth/dpr;
-    canvas.height = window.innerHeight/dpr;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
 
 
