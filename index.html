@@ -157,7 +157,7 @@ in vec4 aVertexPosition;
 out highp vec2 vTextureCoord;
 void main() {
   gl_Position = aVertexPosition;
-  vTextureCoord = aVertexPosition.xy + 0.5;
+  vTextureCoord = aVertexPosition.xy*0.5 + .5;
 }`;
 
   // 片段着色器
@@ -174,13 +174,13 @@ uniform sampler2D uTexture1;
 uniform sampler2D uTexture2;
 float f( vec3 p ) {
     p.z += uTime / 15.0;
-    vec2 mouse=vec2(uMouse.x/u_resolution.x,uMouse.y/u_resolution.y);
+    vec2 mouse=vec2(uMouse.x/u_resolution.x-0.5,uMouse.y/u_resolution.y);
     p.xy += mouse.xy*5. ;
 
-    return length(cos(p*2.5)
-                  + .01*cos(p.x/40.)
-                  + .01*sin((p.y/10.))
-                  ) - .45; 
+    return length(   cos(p*3.5)
+                  + 1.5*cos(p.x/1.)
+                  + 1.1*sin(p.y*1.2+uTime/10.)
+                  ) - .55; 
 }
 
 void main() {
@@ -190,10 +190,10 @@ void main() {
     vec3 o = d;
     for( int i=0; i<12; i++ )
     {
-        o -= f(o)*d;
+        o -= f(o)*d*.7;
     } 
     vec4 c = vec4(1.0,1.15,1.2,1.0);
-    c = abs( f(o-d)*c + f(o-0.3)*(.7-c))*(1.-.2*o.z);
+    c = abs( f(o-d)*c + f(o+d)*(1.2-c))*(1.-.1*o.z)*0.35;
 
     fragColor=vec4(c.xyz,1.0);
 }`;
