@@ -173,11 +173,14 @@ uniform vec2 u_resolution;
 uniform sampler2D uTexture1;
 uniform sampler2D uTexture2;
 float f( vec3 p ) {
-    p.z += uTime / 5.0;
+    p.z += uTime / 15.0;
     vec2 mouse=vec2(uMouse.x/u_resolution.x,uMouse.y/u_resolution.y);
     p.xy += mouse.xy*5. ;
 
-    return length(vec3(sin(p.x/2.),cos(p.y/2.),sin(p.z*2.5))) - .32; 
+    return length(cos(p*2.5)
+                  + .01*cos(p.x/40.)
+                  + .01*sin((p.y/10.))
+                  ) - .45; 
 }
 
 void main() {
@@ -190,7 +193,7 @@ void main() {
         o -= f(o)*d;
     } 
     vec4 c = vec4(1.0,1.15,1.2,1.0);
-    c = abs( f(o-d)*c + f(o-0.1)*(1.5-c) )*(1.-.2*o.z);
+    c = abs( f(o-d)*c + f(o-0.1)*(1.2-c) )*(1.-.2*o.z);
 
     fragColor=vec4(c.xyz,1.0);
 }`;
