@@ -188,12 +188,12 @@ void main() {
     vec2 I = vec2(vTextureCoord.x*rect,vTextureCoord.y) ; // 将纹理坐标调整为像素坐标
     vec3 d = 0.5- vec3(I, 1.) ;
     vec3 o = d;
-    for( int i=0; i<12; i++ )
+    for( int i=0; i<15; i++ )
     {
-        o -= f(o)*d*.8;
+        o -= f(o)*d*0.45;
     } 
-    vec4 c = vec4(1.8,1.2,1.2,0);
-    c = abs( f(o-.4)*c + f(o-0.7)*(1.5-c) )*(1.-.3*o.z)*0.5;
+    vec4 c = vec4(0.6,1.0,1.4,1.0);
+    c = abs( f(o-d)*c + f(o-0.4)*(vec4(2.0,2.2,2.3,1.)-c) )*(1.-.3*o.z)*0.3;
 
     fragColor=vec4(c.xyz,1.0);
 }`;
