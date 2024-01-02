@@ -157,7 +157,7 @@ in vec4 aVertexPosition;
 out highp vec2 vTextureCoord;
 void main() {
   gl_Position = aVertexPosition;
-  vTextureCoord = aVertexPosition.xy * 0.5 + 0.5;
+  vTextureCoord = aVertexPosition.xy + 0.5;
 }`;
 
   // 片段着色器
@@ -172,24 +172,33 @@ uniform float uTime;
 uniform vec2 u_resolution;
 uniform sampler2D uTexture1;
 uniform sampler2D uTexture2;
-void main()
-{
+float f( vec3 p ) {
+    p.z += uTime / 5.0;
     vec2 mouse=vec2(uMouse.x/u_resolution.x,uMouse.y/u_resolution.y);
-    mouse-=vec2(.5,.5);
-    mouse/=2.;
+    p.xy += mouse.xy*5. ;
+
+    return length( cos(p*2.)
+                  + .6*sin(p.x+uTime/2.)
+                  + .03*cos((p.x*p.y+uTime))
+                  ) - .32; 
+}
+
+void main() {
     float rect=u_resolution.x/u_resolution.y;
     vec2 I = vec2(vTextureCoord.x*rect,vTextureCoord.y) ; // 将纹理坐标调整为像素坐标
-    vec4 O; // 初始化输出颜色
-    for(O=vec4(0.01,0.01,0.01,0.01); (O.r*1.5)<sin(texture(uTexture1, I/7.-(uTime*mouse+100.)/(O.r)/2500.).r*10.); O+=.03)
+    vec3 d = 0.5- vec3(I, 1.0) ;
+    vec3 o = d;
+    for( int i=0; i<12; i++ )
     {
-        if(O.r==0.07)
-        {
-            O+=texture(uTexture2,I-(uTime*mouse+100.)/O.r/2500.*10.);
-        }
-    }
-    O=vec4(O.r,O.g,0.1,1.);
-    fragColor=O;
+        o -= f(o)*d;
 
+
+
+    } 
+    vec4 c = vec4(1.2,2.2,2.3,1.0);
+    c = abs( f(o+0.1)*c + f(o-0.1)*(2.-c) )*(1.-.2*o.z);
+
+    fragColor=vec4(c.xyz,1.0);
 }`;
 
 
