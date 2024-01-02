@@ -47,7 +47,7 @@
   .sidebar-menu {
     position: fixed;
     top: 40px;
-    right: -15%;
+    right: -25%;
     width: 15%;
     height: 100%;
     background-color: transparent;
@@ -196,7 +196,7 @@ void main() {
 
     } 
     vec4 c = vec4(1.2,2.2,2.3,1.0);
-    c = abs( f(o+0.1)*c + f(o-0.1)*(2.-c) )*(1.-.2*o.z);
+    c = abs( f(o+0.1)*c + f(o-0.1)*(1.-c) )*(1.-.2*o.z);
 
     fragColor=vec4(c.xyz,1.0);
 }`;
