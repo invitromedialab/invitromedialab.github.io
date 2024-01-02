@@ -177,9 +177,7 @@ float f( vec3 p ) {
     vec2 mouse=vec2(uMouse.x/u_resolution.x,uMouse.y/u_resolution.y);
     p.xy += mouse.xy*5. ;
 
-    return length( vec3(sin(p.x*2.0),cos(p.y*2.),sin(p.z*2.))
-              
-                  ) - .32; 
+    return length(vec3(sin(p.x/2.),cos(p.y/2.),sin(p.z*2.5))) - .32; 
 }
 
 void main() {
