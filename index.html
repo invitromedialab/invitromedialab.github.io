@@ -177,9 +177,8 @@ float f( vec3 p ) {
     vec2 mouse=vec2(uMouse.x/u_resolution.x,uMouse.y/u_resolution.y);
     p.xy += mouse.xy*5. ;
 
-    return length( cos(p*2.)
-                  + .6*sin(p.x+uTime/2.)
-                  + .03*cos((p.x*p.y+uTime))
+    return length( vec3(sin(p.x*2.0),cos(p.y*2.),sin(p.z*2.))
+              
                   ) - .32; 
 }
 
@@ -191,12 +190,9 @@ void main() {
     for( int i=0; i<12; i++ )
     {
         o -= f(o)*d;
-
-
-
     } 
-    vec4 c = vec4(1.2,2.2,2.3,1.0);
-    c = abs( f(o+0.1)*c + f(o-0.1)*(.5-c) )*(1.-.2*o.z);
+    vec4 c = vec4(1.0,1.15,1.2,1.0);
+    c = abs( f(o-d)*c + f(o-0.1)*(1.5-c) )*(1.-.2*o.z);
 
     fragColor=vec4(c.xyz,1.0);
 }`;
