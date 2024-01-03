@@ -46,16 +46,24 @@
 
   .sidebar-menu {
     position: fixed;
-    top: 40px;
-    right: -23%;
-    width: 23%;
+    top: 8%;
+    right: -20%;
+    width: 15%;
     height: 100%;
-    background-color: transparent;
-    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.5);;
+    padding: 50px;
     transition: right 0.5s;
     box-sizing: border-box;
     color: #808080; /* 更淡的灰色 */
     text-align: center;
+  }
+
+  /* 媒体查询适配手机屏幕 */
+  @media (max-width: 768px) {
+  .sidebar-menu {
+    width: 30%; /* 手机屏幕时增加菜单宽度 */
+    right: -30%; /* 初始状态下保持菜单完全隐藏 */
+   }
   }
 
   .sidebar-menu a, .sidebar-menu div {
