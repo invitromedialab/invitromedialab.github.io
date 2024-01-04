@@ -105,7 +105,14 @@
   .sidebar-menu a, .sidebar-menu div {
   font-size: 8px; /* 手机屏幕的字体大小减小 */
    }
-
+   .work-image, .work-video {
+  height: 100vh; /* 视口高度 */
+  object-fit: cover; /* 保持比例，填满容器 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  transition: opacity 0.5s ease;
+}
 
   }
 
