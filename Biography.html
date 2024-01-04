@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biography</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body, html {
+    height: 100%;
+    font-family: 'Verdana Pro Regular', Verdana, sans-serif;
+    background-color: #000;
+  }
+
+  .menu-button {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    color: white;
+  }
+  .work-video
+  {
+    justify-content: center; /* 水平居中 */
+    align-items: center; /* 垂直居中 */
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    transition: opacity 0.5s ease; /* 添加渐变效果 */
+  }
+
+
+  .work-image {
+  width: 100vw;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  background-position: center; /* 使背景图片居中 */
+  background-repeat: no-repeat; /* 防止背景图片重复 */
+  position: fixed; /* 固定位置，避免滚动影响背景 */
+  top: 0;
+  left: 0;
+  transition: opacity 0.5s ease; /* 添加渐变效果 */
+  }
+
+  /* 文本样式 */
+  .work-description1 {
+    position: absolute; /* 绝对定位 */
+    left: 20%; /* 距离右侧50% */
+    top: 8%;
+    bottom: 0%; /* 距离底部10% */
+    color: #fff; /* 文字颜色为白色 */
+    font-size: 0.1em; /* 字体大小 */
+    padding: 10px; /* 内边距 */
+    border-radius: 5px; /* 圆角边框 */
+    max-width: 35%; /* 最大宽度限制 */
+    box-sizing: border-box;
+    z-index: 1;
+    text-align: justify;
+  }
+
+    .work-description2 {
+    position: absolute; /* 绝对定位 */
+    left: 20%; /* 距离右侧50% */
+    top: 25%;
+    bottom: 0%; /* 距离底部10% */
+    color: #fff; /* 文字颜色为白色 */
+    font-size: 0.1em; /* 字体大小 */
+    padding: 10px; /* 内边距 */
+    border-radius: 5px; /* 圆角边框 */
+    max-width: 100%; /* 最大宽度限制 */
+    box-sizing: border-box;
+    z-index: 1;
+    text-align: justify;
+  }
+
+
+  .menu-button:before {
+    content: '≡';
+    font-size: 2em;
+    z-index: 1;
+  }
+
+  .sidebar-menu {
+    position: fixed;
+    top: 8%;
+    right: -20%;
+    width: 15%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);;
+    padding: 50px;
+    transition: right 0.5s;
+    box-sizing: border-box;
+    color: #808080; /* 更淡的灰色 */
+    text-align: center;
+    z-index: 1;
+  }
+
+  .sidebar-menu a, .sidebar-menu div {
+    color: white; /* 更淡的灰色 */
+    text-decoration: none;
+    display: block;
+    margin-bottom: 10px;
+    font-size: 10px;
+  }
+
+  /* 媒体查询适配手机屏幕 */
+  @media (max-width: 768px) {
+  .sidebar-menu {
+    width: 50%; /* 手机屏幕时增加菜单宽度 */
+    right: -50%; /* 初始状态下保持菜单完全隐藏 */
+   }
+  .sidebar-menu a, .sidebar-menu div {
+  font-size: 8px; /* 手机屏幕的字体大小减小 */
+   }
+
+
+  }
+
+  .sidebar-menu div.space {
+    height: 20px; /* 空白间隔的高度 */
+  }
+  
+  .menu-button.hide {
+    display: none;
+  }
+
+  .sidebar-menu.active {
+    right: 0;
+  }
+</style>
+</head>
+<body>
+
+<button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
+<div class="sidebar-menu" id="sidebarMenu">
+  <a href="index.html">In Vitro Media</a>
+  <div class="space"></div> <!-- 空白间隔 -->
+  <a href="temporary-soul.html">Temporary Soul</a>
+  <a href="Standing-at-the-center-of-the-continental-shelf.html">Standing at the center of the continental shelf</a>
+  <a href="Biography.html">Biography</a>
+</div>
+
+
+  <div class="work-description1">
+    <h1></h1>
+    <p>In Vitro, an artist duo co-founded by Xiyue Hu and Xing Xiao, engages in media art, focusing on the development of game engines, virtual reality, and augmented reality. 
+    Their creations, centered around biology, complex systems, and artificial intelligence, involve interdisciplinary collaborations with archaeologists and biologists. 
+    In Vitro holds the view that modern science and humanities are intertwined, not independent or irreducible fields. Utilizing game engines, 
+    they craft real-time simulations of complex systems mirroring ecosystems, and aim to broaden these explorations to encompass socio-economic systems, drawing parallels between the two.<br><br>
+    
+    </p>
+
+    <!-- 添加更多描述文本 -->
+
+  </div>
+    <div class="work-description2">
+    <h1>Solo Exhibitions</h1>
+    <p>Se tenir au centre du plateau continental, Tree Art Gallery, Paris, France, 2023 <br>
+       Le Dernier Jour du Cambrien, 5UN7 Gallery, Bordeaux, France, 2021<br><br>
+    <h1>Group Exhibitions</h1>
+       A-Real Engine - The 18th Digital Art Festival Taipei, Taipei Digital Art Center, Taipei, Taiwan,2023<br>
+       The 4th ARTEX, French National Centre for Scientific Research - Institute Systems Complexes(CNRS - ISC-PIF), Paris, France, 2023<br>
+       L'Art préhistorique, de l’Atlantique à la Méditerranée, Musée d'Aquitaine, Bordeaux, France,2023<br>
+       Jeu de Mondes 2.0, Château d’Eau – Antre Peaux, Bourges, France, 2023<br>
+       Chongqing Light and Shadow Art Fesvital Invitation Stage, Chongqing, China, 2022<br>
+       Chongqing Holographic Fragments, Chongqing Times Art Museum, Chongqing, China, 2023<br>
+       Fluid Identity 流动的身份 , Guangdong Museum of Art, Guangzhou, China, 2022<br>
+       Digitale Caverne,Galerie des Tables,Bordeaux, France, 2021<br>
+       Bu Liang Ti Tai | What’s Up the Body, online NFT exhibition, YeahDAO, 2021<br>
+       From Fake Mountains to Faith & The Colonial Warehouse,Bordeaux Archives, France, 2020<br>
+       Eye of Storm 台风眼 , Ultramontane Gallery, Hangzhou, China, 2020<br>
+       Night Mess,Espace Saint-Rémi,Bordeaux,2019<br><br>
+     
+       Video game development and filmmaking:<br>
+       2023, Game Developer for the Art Game "Flamme Flamme" by Yue Sun, Headquarters of theFrench Communist Party, Paris<br>
+       2022, Unity Developer for the feature film "UKI" by Shulea Cheng, Jürgen Brüning filmproduktion, Antre Peaux, Labomedia, France<br>
+       2022, Game Developer for the VR Game "Jeu de Mondes 2.0", Antre Peaux, France<br>
+       2022, Game Developer for the interactive game project "They dig in suitable soil" by The Mycological Twist, CAPC, Bordeaux<br>
+       2022, 3D Animation Maker for the short film 'From Songs to Dreams of Another Mirror' by Yunyi Zhu, Le Fresnoy, France<br>
+       2022, AI-generated imagery maker for the AI-generated Film Installation "Paredes Saben" by Ana Elena Tejera, Ars Electronica Festival, Linz<br>
+       2021, AI-generated imagery maker for the AI-generated Film "Rough-Colored Clouds" BY Santiago Bonilla, Le Fresnoy<br>
+       2021, Lead Developer for the online NFT exhibition Bu Liang Ti Tai | What’s Up the Body by YeahDAO<br>
+       2020, Lead Developer for the project Ur-Ei, The Emerging Curators Project 2020, Shanghai Power Station of Art's, Shanghai<br><br>
+
+       Lectures and Workshops:<br>
+       2022, Guest lecturer of workshop “The pursuit of technology” of media arts at Sichuan Institute of Fine Arts, Chongqing, China<br>
+       2023, Complex Science × Art Series Seminars, Swarm Club, Online<br><br><br>
+       
+       <h1>Contact</h1>
+       invitromadialab@gmail.com<br>
+
+       </p>
+
+    <!-- 添加更多描述文本 -->
+  </div>
+
+
+<script>
+ 
+function toggleMenu(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+  var sidebarMenu = document.getElementById('sidebarMenu');
+  var menuButton = document.getElementById('menuButton');
+  
+  sidebarMenu.classList.toggle('active');
+  menuButton.classList.toggle('hide');
+}
+document.addEventListener('click', function(event) {
+  var sidebarMenu = document.getElementById('sidebarMenu');
+  var menuButton = document.getElementById('menuButton');
+  console.log(event.target.className); // 打印
+  // 检查是否点击了菜单按钮或侧边栏菜单
+  if (event.target.closest('.sidebar-menu, .menu-button')) {
+    event.stopPropagation(); // 阻止事件冒泡
+    sidebarMenu.classList.toggle('active');
+    menuButton.classList.toggle('hide');
+  } else if ((event.target.classList.contains('work-image')||event.target.classList.contains('work-video'))&&!sidebarMenu.classList.contains('active')) {
+
+    // 如果点击的是背景图片，则切换图片
+    changeBackgroundImage();
+
+  } else {
+    // 如果点击的不是菜单按钮或侧边栏菜单，则关闭菜单
+    sidebarMenu.classList.remove('active');
+    menuButton.classList.remove('hide');
+  }
+});
+
+
+</script>
+
+</body>
+</html>
