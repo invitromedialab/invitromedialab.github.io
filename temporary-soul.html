@@ -169,23 +169,30 @@ function changeBackgroundImage() {
   const workVideo = document.querySelector('.work-video');
   const currentMedia = images[imageIndex];
 
-  workImage.style.opacity = 0;
-
-  setTimeout(() => {
-      console.log(typeof currentMedia);
-    if (typeof currentMedia === 'string') {
-      // 如果是图片
-      workVideo.style.display = 'none'; // 隐藏元素
-      workImage.style.display = 'block'; 
-      workImage.src = currentMedia;
-      workImage.style.opacity = 1;
-    } else if (currentMedia.type === 'video') {
-      // 如果是视频
-      workVideo.style.display = 'block'; // 隐藏元素
+  if (typeof currentMedia === 'string') {
+    // 如果是图片
+    workVideo.pause(); // 暂停视频
+    workVideo.style.display = 'none'; // 隐藏视频
+    workImage.style.display = 'block'; 
+    workImage.src = currentMedia;
+    fadeIn(workImage);
+  } else if (currentMedia.type === 'video') {
+    // 如果是视频
+    workImage.style.opacity = 0;
+    setTimeout(() => {
       workImage.style.display = 'none'; 
-      workVideo.src = currentMedia.src;  // 替换图片为视频
-    }
-  }, 500);
+      workVideo.style.display = 'block';
+      workVideo.src = currentMedia.src;  // 设置视频源
+      workVideo.play(); // 播放视频
+      fadeIn(workVideo);
+    }, 500);
+  }
+}
+
+function fadeIn(element) {
+  setTimeout(() => {
+    element.style.opacity = 1;
+  }, 10); // 稍微延迟开始渐入，确保display属性已更新
 }
 // 将点击事件添加到图片上
 function toggleMenu(event) {
@@ -198,6 +205,13 @@ function toggleMenu(event) {
   sidebarMenu.classList.toggle('active');
   menuButton.classList.toggle('hide');
 }
+window.onload = function() {
+  const workVideo = document.querySelector('.work-video');
+  if (workVideo) {
+    workVideo.pause(); // 暂停视频
+  }
+};
+
 document.addEventListener('click', function(event) {
   var sidebarMenu = document.getElementById('sidebarMenu');
   var menuButton = document.getElementById('menuButton');
