@@ -14,6 +14,7 @@
   body, html {
     height: 100%;
     font-family: 'Verdana Pro Regular', Verdana, sans-serif;
+    background-color: #000;
   }
 
   .menu-button {
@@ -26,7 +27,16 @@
     border: none;
     color: white;
   }
-
+  .work-video
+  {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      width: 100%;
+      transition: opacity 0.5s ease; /* 添加渐变效果 */
+  }
 
 
   .work-image {
@@ -36,7 +46,7 @@
   position: fixed; /* 固定位置，避免滚动影响背景 */
   top: 0;
   left: 0;
-  z-index: -1; /* 确保背景在内容之下 */
+  transition: opacity 0.5s ease; /* 添加渐变效果 */
   }
 
   /* 文本样式 */
@@ -50,11 +60,13 @@
     border-radius: 5px; /* 圆角边框 */
     max-width: 30%; /* 最大宽度限制 */
     box-sizing: border-box;
+    z-index: 1;
   }
 
   .menu-button:before {
     content: '≡';
     font-size: 2em;
+    z-index: 1;
   }
 
   .sidebar-menu {
@@ -69,6 +81,7 @@
     box-sizing: border-box;
     color: #808080; /* 更淡的灰色 */
     text-align: center;
+    z-index: 1;
   }
 
   .sidebar-menu a, .sidebar-menu div {
@@ -120,7 +133,8 @@
 </div>
 
 
-  <img src="img/_Invitro_2023TaipeiDigitalArtFestival02.jpeg" alt="Work Image" class="work-image"> <!-- 替换为您的图片路径 -->
+<video class="work-video" autoplay loop muted><source src="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/b37d4fa23270835014562158476/IbSazUoNdJIA.mp4" type="video/mp4" display= "none"></video>
+<img src="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/fe309d563270835014563061290/SfbG4KPcJAcA.jpeg" alt="Work Image" class="work-image" display= "block">
   <div class="work-description">
     <h1>Temporary Soul</h1>
     <p>2023<br>
@@ -131,34 +145,77 @@
 
 <script>
  
+let imageIndex = 0;
+const images = [
+  'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/fe309d563270835014563061290/SfbG4KPcJAcA.jpeg',
+  /*'img/_Invitro_2023TaipeiDigitalArtFestival02.jpeg', // 替换为第二张图片的路径*/
+  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/b37d4fa23270835014562158476/IbSazUoNdJIA.mp4' },  // 视频条目
+  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/10917bb63270835014563821160/UyqxQGt55H4A.mp4' },  // 视频条目
+  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/2c4187063270835014560963892/7hEUmLpy7T4A.mp4' },  // 视频条目
+  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/76f81ddc3270835014561872621/AIuoGcq6ZyYA.mp4' },  // 视频条目
 
 
+  // 添加更多图片或视频路径  
+];
+
+function changeBackgroundImage() {
+  imageIndex = (imageIndex + 1) % images.length;
+  console.log("Current image index:", imageIndex);
+
+  const workImage = document.querySelector('.work-image');
+  const workVideo = document.querySelector('.work-video');
+  const currentMedia = images[imageIndex];
+
+  workImage.style.opacity = 0;
+
+  setTimeout(() => {
+      console.log(typeof currentMedia);
+    if (typeof currentMedia === 'string') {
+      // 如果是图片
+      workVideo.style.display = 'none'; // 隐藏元素
+      workImage.style.display = 'block'; 
+      workImage.src = currentMedia;
+      workImage.style.opacity = 1;
+    } else if (currentMedia.type === 'video') {
+      // 如果是视频
+      workVideo.style.display = 'block'; // 隐藏元素
+      workImage.style.display = 'none'; 
+      workVideo.src = currentMedia.src;  // 替换图片为视频
+    }
+  }, 500);
+}
+// 将点击事件添加到图片上
 function toggleMenu(event) {
   if (event) {
     event.stopPropagation();
   }
-
   var sidebarMenu = document.getElementById('sidebarMenu');
   var menuButton = document.getElementById('menuButton');
   
   sidebarMenu.classList.toggle('active');
   menuButton.classList.toggle('hide');
 }
-
 document.addEventListener('click', function(event) {
-  if (!event.target.closest('.sidebar-menu, .menu-button')) {
-    var sidebarMenu = document.getElementById('sidebarMenu');
-    var menuButton = document.getElementById('menuButton');
+  var sidebarMenu = document.getElementById('sidebarMenu');
+  var menuButton = document.getElementById('menuButton');
+  console.log(event.target.className); // 打印
+  // 检查是否点击了菜单按钮或侧边栏菜单
+  if (event.target.closest('.sidebar-menu, .menu-button')) {
+    event.stopPropagation(); // 阻止事件冒泡
+    sidebarMenu.classList.toggle('active');
+    menuButton.classList.toggle('hide');
+  } else if ((event.target.classList.contains('work-image')||event.target.classList.contains('work-video'))&&!sidebarMenu.classList.contains('active')) {
+
+    // 如果点击的是背景图片，则切换图片
+    changeBackgroundImage();
+
+  } else {
+    // 如果点击的不是菜单按钮或侧边栏菜单，则关闭菜单
     sidebarMenu.classList.remove('active');
     menuButton.classList.remove('hide');
   }
 });
 
-document.getElementById('sidebarMenu').addEventListener('click', function(event) {
-  event.stopPropagation();
-});
-
-window.onload = initWebGL;
 
 </script>
 
