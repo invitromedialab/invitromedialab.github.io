@@ -169,30 +169,33 @@ function changeBackgroundImage() {
   const workVideo = document.querySelector('.work-video');
   const currentMedia = images[imageIndex];
 
-  if (typeof currentMedia === 'string') {
-    // 如果是图片
-    workVideo.pause(); // 暂停视频
-    workVideo.style.display = 'none'; // 隐藏视频
-    workImage.style.display = 'block'; 
-    workImage.src = currentMedia;
-    fadeIn(workImage);
-  } else if (currentMedia.type === 'video') {
-    // 如果是视频
-    workImage.style.opacity = 0;
-    setTimeout(() => {
+  // 首先将透明度设置为0
+  workImage.style.opacity = 0;
+  workVideo.style.opacity = 0;
+
+  setTimeout(() => {
+    if (typeof currentMedia === 'string') {
+      // 如果是图片
+      workVideo.pause(); // 暂停视频
+      workVideo.style.display = 'none'; // 隐藏视频
+      workImage.style.display = 'block'; 
+      workImage.src = currentMedia;
+      fadeIn(workImage);
+    } else if (currentMedia.type === 'video') {
+      // 如果是视频
       workImage.style.display = 'none'; 
       workVideo.style.display = 'block';
       workVideo.src = currentMedia.src;  // 设置视频源
       workVideo.play(); // 播放视频
       fadeIn(workVideo);
-    }, 500);
-  }
+    }
+  }, 500); // 等待透明度变化完成
 }
 
 function fadeIn(element) {
   setTimeout(() => {
     element.style.opacity = 1;
-  }, 10); // 稍微延迟开始渐入，确保display属性已更新
+  }, 10); // 稍微延迟开始渐入
 }
 // 将点击事件添加到图片上
 function toggleMenu(event) {
