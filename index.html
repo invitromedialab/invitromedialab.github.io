@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>In Vitro Media</title>
-<link rel="icon" href="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/8922e2653270835014575270876/4CG8VAW8SwYA.png" type="image/png"> <!-- 网站图标 -->
+<link rel="icon" href="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/8922e2653270835014575270876/4CG8VAW8SwYA.png" type="image/png"> 
 
 <style>
   * {
@@ -56,31 +56,31 @@
     padding: 50px;
     transition: right 0.5s;
     box-sizing: border-box;
-    color: #808080; /* 更淡的灰色 */
+    color: #808080; 
     text-align: center;
   }
 
   .sidebar-menu a, .sidebar-menu div {
-    color: white; /* 更淡的灰色 */
+    color: white; 
     text-decoration: none;
     display: block;
     margin-bottom: 10px;
     font-size: 10px;
   }
 
-  /* 媒体查询适配手机屏幕 */
+  
   @media (max-width: 768px) {
   .sidebar-menu {
-    width: 50%; /* 手机屏幕时增加菜单宽度 */
-    right: -50%; /* 初始状态下保持菜单完全隐藏 */
+    width: 50%; 
+    right: -50%; 
    }
   .sidebar-menu a, .sidebar-menu div {
-  font-size: 8px; /* 手机屏幕的字体大小减小 */
+  font-size: 8px; 
    }
   }
 
   .sidebar-menu div.space {
-    height: 20px; /* 空白间隔的高度 */
+    height: 20px; 
   }
   
   .menu-button.hide {
@@ -94,11 +94,11 @@
 </head>
 <body>
 
-<canvas id="glCanvas"></canvas> <!-- 新增canvas元素 -->
+<canvas id="glCanvas"></canvas> 
 <button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
 <div class="sidebar-menu" id="sidebarMenu">
   <a href="index.html">In Vitro Media</a>
-  <div class="space"></div> <!-- 空白间隔 -->
+  <div class="space"></div> 
   <a href="temporary-soul.html">Temporary Soul</a>
   <a href="Standing-at-the-center-of-the-continental-shelf.html">Standing at the center of the continental shelf</a>
   <a href="Biography.html">Biography</a></div>
@@ -116,14 +116,14 @@
         let uTextureLocation;
         let uTexture1Location;
         let uTexture2Location;
-        let mousePos = { x: 0, y: 0 }; // 在全局作用域中声明mousePos
+        let mousePos = { x: 0, y: 0 }; 
         let canvas = document.getElementById('glCanvas');
         let uMouseLocation;
 
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     mousePos.x = e.clientX - rect.left;
-    mousePos.y = rect.height - (e.clientY - rect.top); // 反转Y坐标
+    mousePos.y = rect.height - (e.clientY - rect.top); 
 });
 canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 
@@ -135,18 +135,18 @@ function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     gl.viewport(0, 0, canvas.width, canvas.height);
-    // 如果有需要，重新渲染场景
+    
 }
 function handleTouchMove(event) {
-    event.preventDefault(); // 防止默认的滚动等行为
+    event.preventDefault(); 
 
     if (event.touches.length > 0) {
-        const touch = event.touches[0]; // 获取第一个触摸点
+        const touch = event.touches[0]; 
         const rect = canvas.getBoundingClientRect();
 
-        // 计算触摸点相对于画布的位置
+        
         mousePos.x = touch.clientX - rect.left;
-        mousePos.y = rect.height - (touch.clientY - rect.top); // 反转Y坐标
+        mousePos.y = rect.height - (touch.clientY - rect.top); 
     }
 }
 function initWebGL() {
@@ -163,7 +163,7 @@ function initWebGL() {
     return;
   }
 
-  // 顶点着色器
+  
 const vertexShaderSource = `#version 300 es
 in vec4 aVertexPosition;
 out highp vec2 vTextureCoord;
@@ -172,7 +172,7 @@ void main() {
   vTextureCoord = aVertexPosition.xy + .5;
 }`;
 
-  // 片段着色器
+  
 const fragmentShaderSource = `#version 300 es
 precision mediump float;
 
@@ -216,13 +216,13 @@ void main() {
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     shaderProgram = createShaderProgram(gl, vertexShader, fragmentShader);
     uTimeLocation = gl.getUniformLocation(shaderProgram, 'uTime');
-    // 获取分辨率uniform的位置
+    
     uResolutionLocation = gl.getUniformLocation(shaderProgram, 'u_resolution');
     uMouseLocation = gl.getUniformLocation(shaderProgram, 'uMouse');
 
     uTexture1Location = gl.getUniformLocation(shaderProgram, 'uTexture1');
     uTexture2Location = gl.getUniformLocation(shaderProgram, 'uTexture2');
-    positionBuffer = gl.createBuffer(); // 初始化positionBuffer
+    positionBuffer = gl.createBuffer(); 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     const positions = [
         1.0, 1.0,
@@ -270,7 +270,7 @@ function createShaderProgram(gl, vertexShader, fragmentShader) {
             gl.activeTexture(textureUnit);
             gl.bindTexture(gl.TEXTURE_2D, texture);
 
-            // 设置默认纹理
+            
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
                           new Uint8Array([0, 0, 255, 255]));
 
@@ -297,11 +297,11 @@ function render(now) {
     gl.enableVertexAttribArray(positionAttributeLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-    gl.uniform2f(uResolutionLocation, gl.canvas.width, gl.canvas.height);        // 设置分辨率uniform
-    gl.uniform1f(uTimeLocation, now); // 更新时间
+    gl.uniform2f(uResolutionLocation, gl.canvas.width, gl.canvas.height);    
+    gl.uniform1f(uTimeLocation, now); 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-               // 绑定纹理
+              
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture1);
             gl.uniform1i(uTexture1Location, 0);
@@ -317,7 +317,7 @@ function render(now) {
 
 
 
-    requestAnimationFrame(render); // 递归调用自身以持续渲染
+    requestAnimationFrame(render); 
 }
 
 

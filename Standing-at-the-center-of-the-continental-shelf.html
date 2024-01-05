@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Standing at the center of the continental shelf</title>
-<link rel="icon" href="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/8922e2653270835014575270876/4CG8VAW8SwYA.png" type="image/png"> <!-- 网站图标 -->
+<link rel="icon" href="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/8922e2653270835014575270876/4CG8VAW8SwYA.png" type="image/png"> 
 
 <style>
   * {
@@ -31,39 +31,39 @@
   }
   .work-video
   {
-    justify-content: center; /* 水平居中 */
-    align-items: center; /* 垂直居中 */
+    justify-content: center; 
+    align-items: center; 
     top: 0;
     left: 0;
     bottom: 0;
     right: 0;
     width: 100%;
-    transition: opacity 0.5s ease; /* 添加渐变效果 */
+    transition: opacity 0.5s ease; 
   }
 
 
   .work-image {
   width: 100vw;
-  justify-content: center; /* 水平居中 */
-  align-items: center; /* 垂直居中 */
-  background-position: center; /* 使背景图片居中 */
-  background-repeat: no-repeat; /* 防止背景图片重复 */
-  position: fixed; /* 固定位置，避免滚动影响背景 */
+  justify-content: center; 
+  align-items: center; 
+  background-position: center; 
+  background-repeat: no-repeat; 
+  position: fixed; 
   top: 0;
   left: 0;
-  transition: opacity 0.5s ease; /* 添加渐变效果 */
+  transition: opacity 0.5s ease; 
   }
 
-  /* 文本样式 */
+  
   .work-description {
-    position: absolute; /* 绝对定位 */
-    left: 2%; /* 距离右侧50% */
-    bottom: 5%; /* 距离底部10% */
-    color: #fff; /* 文字颜色为白色 */
-    font-size: 0.1em; /* 字体大小 */
-    padding: 10px; /* 内边距 */
-    border-radius: 5px; /* 圆角边框 */
-    max-width: 27%; /* 最大宽度限制 */
+    position: absolute; 
+    left: 2%; 
+    bottom: 5%; 
+    color: #fff; 
+    font-size: 0.1em; 
+    padding: 10px; 
+    border-radius: 5px; 
+    max-width: 27%; 
     box-sizing: border-box;
     z-index: 1;
     text-align: justify;
@@ -85,31 +85,31 @@
     padding: 50px;
     transition: right 0.5s;
     box-sizing: border-box;
-    color: #808080; /* 更淡的灰色 */
+    color: #808080; 
     text-align: center;
     z-index: 1;
   }
 
   .sidebar-menu a, .sidebar-menu div {
-    color: white; /* 更淡的灰色 */
+    color: white; 
     text-decoration: none;
     display: block;
     margin-bottom: 10px;
     font-size: 10px;
   }
 
-  /* 媒体查询适配手机屏幕 */
+  
   @media (max-width: 768px) {
   .sidebar-menu {
-    width: 50%; /* 手机屏幕时增加菜单宽度 */
-    right: -50%; /* 初始状态下保持菜单完全隐藏 */
+    width: 50%; 
+    right: -50%; 
    }
   .sidebar-menu a, .sidebar-menu div {
-  font-size: 8px; /* 手机屏幕的字体大小减小 */
+  font-size: 8px; 
    }
    .work-image, .work-video {
-  height: 100vh; /* 视口高度 */
-  object-fit: cover; /* 保持比例，填满容器 */
+  height: 100vh; 
+  object-fit: cover; 
   position: fixed;
   top: 0;
   left: 0;
@@ -118,7 +118,7 @@
   }
 
   .sidebar-menu div.space {
-    height: 20px; /* 空白间隔的高度 */
+    height: 20px; 
   }
   
   .menu-button.hide {
@@ -135,7 +135,7 @@
 <button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
 <div class="sidebar-menu" id="sidebarMenu">
   <a href="index.html">In Vitro Media</a>
-  <div class="space"></div> <!-- 空白间隔 -->
+  <div class="space"></div> 
   <a href="temporary-soul.html">Temporary Soul</a>
   <a href="Standing-at-the-center-of-the-continental-shelf.html">Standing at the center of the continental shelf</a>
   <a href="Biography.html">Biography</a>
@@ -152,7 +152,7 @@
     Organisms self-generate, much like a video game program, being their own code and abiding by their own laws. However, the path to autonomy is the most challenging one. 
     Standing at the center of the continental shelf connects human imagination with machine imagination, situating technological objects and the human society built upon them in the context of biological history.
     </p>
-    <!-- 添加更多描述文本 -->
+    
   </div>
 
 
@@ -163,10 +163,10 @@ const images = [
   'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/5505d73b3270835014571244860/GrJ8Os5MLK8A.png',
   'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/52c4ef9e3270835014571158625/CdHvD4lw2iEA.png',
   'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/527b6c983270835014571116445/P2d0EXmZuOIA.png',
-  /*'img/_Invitro_2023TaipeiDigitalArtFestival02.jpeg', // 替换为第二张图片的路径*/
-  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/18869db03270835014570969697/iyaFvXMMCqUA.mp4' },  // 视频条目
+  
+  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/18869db03270835014570969697/iyaFvXMMCqUA.mp4' },  
 
-  // 添加更多图片或视频路径  
+    
 ];
 function changeBackgroundImage() {
   imageIndex = (imageIndex + 1) % images.length;
@@ -176,34 +176,34 @@ function changeBackgroundImage() {
   const workVideo = document.querySelector('.work-video');
   const currentMedia = images[imageIndex];
 
-  // 首先将透明度设置为0
+  
   workImage.style.opacity = 0;
   workVideo.style.opacity = 0;
 
-  // 等待渐出动画完成
+  
   setTimeout(() => {
     if (typeof currentMedia === 'string') {
-      // 如果是图片
-      workImage.onload = () => fadeIn(workImage); // 图片加载后开始渐入
-      workImage.src = currentMedia; // 更改图片源
-      workVideo.pause(); // 暂停视频
-      workVideo.style.display = 'none'; // 隐藏视频
+      
+      workImage.onload = () => fadeIn(workImage); 
+      workImage.src = currentMedia; 
+      workVideo.pause(); 
+      workVideo.style.display = 'none'; 
       workImage.style.display = 'block';
     } else if (currentMedia.type === 'video') {
-      // 如果是视频
+      
       workImage.style.display = 'none';
       workVideo.style.display = 'block';
-      workVideo.src = currentMedia.src; // 设置视频源
-      workVideo.onloadeddata = () => fadeIn(workVideo); // 视频数据加载后开始渐入
-      workVideo.play(); // 播放视频
+      workVideo.src = currentMedia.src; 
+      workVideo.onloadeddata = () => fadeIn(workVideo); 
+      workVideo.play(); 
     }
-  }, 500); // 等待CSS渐变动画时间
+  }, 500); 
 }
 
 function fadeIn(element) {
   element.style.opacity = 1;
 }
-// 将点击事件添加到图片上
+
 function toggleMenu(event) {
   if (event) {
     event.stopPropagation();
@@ -217,7 +217,7 @@ function toggleMenu(event) {
 window.onload = function() {
   const workVideo = document.querySelector('.work-video');
   if (workVideo) {
-    workVideo.pause(); // 暂停视频
+    workVideo.pause(); 
     workVideo.display = 'none';
   }
 };
@@ -225,19 +225,19 @@ window.onload = function() {
 document.addEventListener('click', function(event) {
   var sidebarMenu = document.getElementById('sidebarMenu');
   var menuButton = document.getElementById('menuButton');
-  console.log(event.target.className); // 打印
-  // 检查是否点击了菜单按钮或侧边栏菜单
+  console.log(event.target.className); 
+  
   if (event.target.closest('.sidebar-menu, .menu-button')) {
-    event.stopPropagation(); // 阻止事件冒泡
+    event.stopPropagation(); 
     sidebarMenu.classList.toggle('active');
     menuButton.classList.toggle('hide');
   } else if ((event.target.classList.contains('work-image')||event.target.classList.contains('work-video'))&&!sidebarMenu.classList.contains('active')) {
 
-    // 如果点击的是背景图片，则切换图片
+    
     changeBackgroundImage();
 
   } else {
-    // 如果点击的不是菜单按钮或侧边栏菜单，则关闭菜单
+    
     sidebarMenu.classList.remove('active');
     menuButton.classList.remove('hide');
   }
