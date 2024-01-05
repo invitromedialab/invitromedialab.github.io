@@ -140,7 +140,7 @@
 </div>
 
 
-<video class="work-video" autoplay loop muted><source src="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/18869db03270835014570969697/iyaFvXMMCqUA.mp4" type="video/mp4" display= "none"></video>
+<video class="work-video" autoplay loop muted><source src="" type="video/mp4" display= "none"></video>
 <img src="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/5505d73b3270835014571244860/GrJ8Os5MLK8A.png" alt="Work Image" class="work-image" display= "block">
   <div class="work-description">
     <h1>Standing at the center of the continental shelf</h1>
@@ -178,29 +178,28 @@ function changeBackgroundImage() {
   workImage.style.opacity = 0;
   workVideo.style.opacity = 0;
 
+  // 等待渐出动画完成
   setTimeout(() => {
     if (typeof currentMedia === 'string') {
       // 如果是图片
+      workImage.onload = () => fadeIn(workImage); // 图片加载后开始渐入
+      workImage.src = currentMedia; // 更改图片源
       workVideo.pause(); // 暂停视频
       workVideo.style.display = 'none'; // 隐藏视频
-      workImage.style.display = 'block'; 
-      workImage.src = currentMedia;
-      fadeIn(workImage);
+      workImage.style.display = 'block';
     } else if (currentMedia.type === 'video') {
       // 如果是视频
-      workImage.style.display = 'none'; 
+      workImage.style.display = 'none';
       workVideo.style.display = 'block';
-      workVideo.src = currentMedia.src;  // 设置视频源
+      workVideo.src = currentMedia.src; // 设置视频源
+      workVideo.onloadeddata = () => fadeIn(workVideo); // 视频数据加载后开始渐入
       workVideo.play(); // 播放视频
-      fadeIn(workVideo);
     }
-  }, 500); // 等待透明度变化完成
+  }, 500); // 等待CSS渐变动画时间
 }
 
 function fadeIn(element) {
-  setTimeout(() => {
-    element.style.opacity = 1;
-  }, 10); // 稍微延迟开始渐入
+  element.style.opacity = 1;
 }
 // 将点击事件添加到图片上
 function toggleMenu(event) {
@@ -217,6 +216,7 @@ window.onload = function() {
   const workVideo = document.querySelector('.work-video');
   if (workVideo) {
     workVideo.pause(); // 暂停视频
+    workVideo.display = 'none';
   }
 };
 
