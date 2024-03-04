@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Temporary Soul</title>
+<title>Palace of oblivion</title>
 <link rel="icon" href="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/8922e2653270835014575270876/4CG8VAW8SwYA.png" type="image/png"> 
 
 <style>
@@ -32,7 +32,7 @@
   .work-video
   {
     justify-content: center; 
-    align-items: center;
+    align-items: center; 
     top: 0;
     left: 0;
     bottom: 0;
@@ -63,7 +63,7 @@
     font-size: 0.1em; 
     padding: 10px; 
     border-radius: 5px; 
-    max-width: 28%; 
+    max-width: 27%; 
     box-sizing: border-box;
     z-index: 1;
     text-align: justify;
@@ -107,7 +107,7 @@
   .sidebar-menu a, .sidebar-menu div {
   font-size: 8px; 
    }
-      .work-image, .work-video {
+   .work-image, .work-video {
   height: 100vh; 
   object-fit: cover; 
   position: fixed;
@@ -142,14 +142,20 @@
   <a href="Biography.html">Biography</a>
 </div>
 
-
 <video class="work-video" autoplay loop muted><source src="" type="video/mp4" display= "none"></video>
-<img src="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/fe309d563270835014563061290/SfbG4KPcJAcA.jpeg" alt="Work Image" class="work-image" display= "block">
+<img src="https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/bacbb54c1397757886190115027/adozF9Y0beIA.png" alt="Work Image" class="work-image" display= "block">
   <div class="work-description">
-    <h1>Temporary Soul</h1>
+    <h1>Palace of oblivion</h1>
     <p>Video game<br>
-    <p>2023<br>
-    The game starts with a dialogue where one voice asserts that machines do not possess souls, and even if they do, they are unstable. However, another voice seems unconvinced by this claim. As the game unfolds, two players assume the roles of organisms with unstable souls, tasked with injecting different souls into these bodies to facilitate motion and advance the story.
+    <p>2021<br>
+    Memory constantly seeks inorganic supplements amidst oblivion - graffiti, diaries, internal storage; it needs to externalize to endure. 
+The memory of the internet emerges as a distributed reflection of individual recollections. However, due to the lack of a defined protocol for data storage (embracing a stateless protocol), the internet resides in a 'state of amnesia.' 
+Surrounding this predicament, search engines, data centers, and distributed storage protocols are in a constant battle, vying for the capacity to forge collective memory. <br>
+The 'Palace of Oblivion' draws inspiration from the 'Memory Palace' method conceptualized by Simonides of Ceos. 
+It retraces specific objects, using digital modeling to reconstruct the space representing the author's life in the 90s. 
+On the flip side, utilizing childhood memories as a breadcrumb trail, the author scoured the internet for related imagery through web crawling software. 
+The curated images were uploaded to the decentralized storage and sharing system, IPFS (InterPlanetary File System), tethered to unique, immutable hash codes (CID). 
+Consequently, they are almost eternally preserved on the internet, tucked away in corners of the room within the game.
     </p>
     
   </div>
@@ -159,17 +165,14 @@
  
 let imageIndex = 0;
 const images = [
-  'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/fe309d563270835014563061290/SfbG4KPcJAcA.jpeg',
+  'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/bacbb54c1397757886190115027/adozF9Y0beIA.png',
+  'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/95fe4d1d1397757886189913714/AWDvfgBpPeUA.png',
+  'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/066b5bf41397757886160823275/u3mHuNDaGAQA.png',
   
-  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/b37d4fa23270835014562158476/IbSazUoNdJIA.mp4' },  
-  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/10917bb63270835014563821160/UyqxQGt55H4A.mp4' },  
-  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/2c4187063270835014560963892/7hEUmLpy7T4A.mp4' },  
-  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/76f81ddc3270835014561872621/AIuoGcq6ZyYA.mp4' },  
+  { type: 'video', src: 'https://1300920658.vod2.myqcloud.com/30911c4evodger1300920658/babbce8f1397757886190109045/9GcZRRQ1aqQA.mp4' },  
 
-
-  
+    
 ];
-
 function changeBackgroundImage() {
   imageIndex = (imageIndex + 1) % images.length;
   console.log("Current image index:", imageIndex);
@@ -203,9 +206,7 @@ function changeBackgroundImage() {
 }
 
 function fadeIn(element) {
-  setTimeout(() => {
-    element.style.opacity = 1;
-  }, 10); 
+  element.style.opacity = 1;
 }
 
 function toggleMenu(event) {
