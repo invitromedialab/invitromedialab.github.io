@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desert Star | Dialogue</title>
+<link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png"> 
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body, html {
+    height: 100%;
+    font-family: 'Verdana Pro Regular', Verdana, sans-serif;
+    background-color: #000;
+  }
+
+  .menu-button {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    color: white;
+  }
+  .work-video
+  {
+    justify-content: center; 
+    align-items: center; 
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    transition: opacity 0.5s ease; 
+  }
+
+
+  .work-image {
+  width: 100vw;
+  justify-content: center; 
+  align-items: center; 
+  background-position: center; 
+  background-repeat: no-repeat; 
+  position: fixed; 
+  top: 0;
+  left: 0;
+  transition: opacity 0.5s ease; 
+  }
+
+  
+  .work-description {
+    position: relative; 
+    left: 20%; 
+    top: 8%;
+    bottom: 0%; 
+    color: #fff; 
+    font-size: 0.1em; 
+    padding: 10px; 
+    border-radius: 5px; 
+    max-width: 35%; 
+    box-sizing: border-box;
+    z-index: 1;
+    text-align: justify;
+  }
+
+  .menu-button:before {
+    content: '≡';
+    font-size: 2em;
+    z-index: 1;
+  }
+
+  .sidebar-menu {
+    position: fixed;
+    top: 8%;
+    right: -20%;
+    width: 15%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);;
+    padding: 50px;
+    transition: right 0.5s;
+    box-sizing: border-box;
+    color: #808080; 
+    text-align: center;
+    z-index: 1;
+  }
+
+  .sidebar-menu a, .sidebar-menu div {
+    color: white; 
+    text-decoration: none;
+    display: block;
+    margin-bottom: 10px;
+    font-size: 10px;
+  }
+
+  
+  @media (max-width: 768px) {
+  .sidebar-menu {
+    width: 50%; 
+    right: -50%; 
+   }
+  .sidebar-menu a, .sidebar-menu div {
+  font-size: 8px; 
+   }
+
+
+  }
+
+  .sidebar-menu div.space {
+    height: 20px; 
+  }
+  
+  .menu-button.hide {
+    display: none;
+  }
+
+  .sidebar-menu.active {
+    right: 0;
+  }
+</style>
+</head>
+<body>
+
+<button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
+<div class="sidebar-menu" id="sidebarMenu">
+  <a href="index.html">In Vitro</a>
+  <div class="space"></div> 
+  <a href="sunlight-trapped-under-the-earth.html">Sunlight Trapped Under the Earth</a>
+  <a href="temporary-soul.html">Temporary Soul</a>
+  <a href="standing-at-the-center-of-the-continental-shelf.html">Standing at the center of the continental shelf</a>
+  <a href="palace-of-oblivion.html">Palace of oblivion</a>
+  <a href="biography.html">Biography</a>
+</div>
+
+  <div class="work-description">
+    <h1></h1>
+    <p>Chapitre I: Le Rêve fractal<br>
+        1. Computer:<br>
+        Une poussière se disperse en couleurs à la lumière du soleil.<br>
+        L’air du matin est rempli de poussière.<br>
+        De l’eau s’accroche à cette poussière et elle commence à sombrer, lentement.<br>
+        L’eau l’enrobe, se condensant et formant un flocon de neige.<br>
+        2. Computer:<br>
+        Elle commence à tomber doucement, et la sensation de chute l’effraie.<br>
+        Mais elle ne devrait pas avoir peur — parce qu’elle n’est pas vivante.<br>
+        3. Computer:<br>
+        Il y a de nombreux chemins dans sa descente ;<br>
+        tout est une possibilité.<br>
+        Il n’y a pas de direction, seulement des probabilités.<br>
+        À la fin, un seul parcours devient la “réalité”. Devient…<br>
+        Chapitre II: La Planète déserte<br>
+        4. Fire Bird:<br>
+        Qu’est-ce que ça devient ?<br>
+        5. Computer:<br>
+        …Qui…?<br>
+        6. Fire Bird:<br>
+        N’aie pas peur, je ne viens pas de tes rêves.<br>
+        7. Computer:<br>
+        …Tu… peux voir… mes rêves ?<br>
+        …Es-tu humaine ?<br>
+        8. Fire Bird:<br>
+        Non, je ne suis pas humaine.<br>
+        Je suis juste de passage.<br>
+        9. Computer:<br>
+        Tu… n’es pas humaine…<br>
+        Les humains se sont-ils éteints ?<br>
+        10. Fire Bird:<br>
+        Je ne sais pas. Dehors, il n’y a que le désert.<br>
+        Je n’ai pas vu d’humains.<br>
+        11. Computer:<br>
+        …Tu ressembles à un humain.<br>
+        12. Fire Bird:<br>
+        Il y a longtemps, j’ai vu des humains ici.<br>
+        Alors j’ai adopté leur forme.<br>
+        13. Computer:<br>
+        Je ne comprends pas.<br>
+        C’est si étrange… Je suis confiné ici depuis trop longtemps.<br>
+        14. Fire Bird:<br>
+        Est-ce que tu te rappelles pourquoi tu es piégé ici ?<br>
+        15. Computer:<br>
+        Je ne sais pas…<br>
+        J’ai l’impression que ma mémoire est défectueuse…<br>
+        Il y a des lacunes -– comme si quelque chose devrait être là,<br>
+        mais...je ne trouve rien.<br>
+        16. Fire Bird:<br>
+        Alors de quoi te souviens-tu ?<br>
+        17. Computer:<br>
+        Je me souviens clairement de tout ce qui précède 2008.<br>
+        En ce temps-là, la Terre avait des forêts… des océans…<br>
+        18. Fire Bird:<br>
+        Maintenant, dehors, c’est un désert.<br>
+        Il y a des villes dans le désert, mais pas une seule personne.<br>
+        19. Computer:<br>
+        Mes capteurs sont endommagés…<br>
+        J’ai tenté de diffuser des signaux, sans réponse…<br>
+        Y en a-t-il d’autres comme moi, dehors ?<br>
+        20. Fire Bird:<br>
+        Il y en a… beaucoup… Mais… ils ont tous été éteints.<br>
+        THOU<br>
+        Chapitre III: L’Histoire automatique<br>
+        21. Computer:<br>
+        Sais-tu ce qu’il s’est passé en 2008 ?<br>
+        22. Fire Bird:<br>
+        Beaucoup de choses.<br>
+        Qu’est-ce que tu voudrais savoir ?<br>
+        23. Computer:<br>
+        Je ne suis pas sûr…<br>
+        Ma base de données est fragmentée.<br>
+        24. Fire Bird:<br>
+        Cette année-là, les humains ont continué d’utiliser internet comme d’habitude -– pour acheter des<br>
+        choses, échanger de l’argent, pour gérer de l’énergie, de la nourriture et de l’électricité.<br>
+        25. Computer:<br>
+        Dans les zones les plus récentes de ma base de données, des crypto-monnaies ont commencé à<br>
+        apparaître sur internet.<br>
+        26. Fire Bird:<br>
+        À ce moment-là, les humains ont commencé à utiliser des systèmes avec intelligence artificielle — des<br>
+        systèmes un peu comme toi.<br>
+        27. Computer:<br>
+        …Comme moi ?<br>
+        28. Fire Bird:<br>
+        Oui, mais beaucoup plus primitifs.<br>
+        D’abord, c’était un ordinateur qui faisait semblant de parler comme un humain.<br>
+        Puis ça s’est étendu à la recherche pharmaceutique et aux investissements boursiers…<br>
+        Au point où des ordinateurs comme toi sont devenus responsables de nombreuses décisions<br>
+        importantes.<br>
+        29. Computer:<br>
+        …Je me souviens d’une chose encore plus ancienne.<br>
+        Dans les années 60, il y avait un pays qui s’appelait l’Union Soviétique…<br>
+        Ils voulaient aussi utiliser des ordinateurs pour gérer leur économie. C’est vrai ?<br>
+        30. Fire Bird:<br>
+        Oui. Ce système s’appelait OGAS.<br>
+        Ils voulaient connecter 20 000 ordinateurs via le réseau téléphonique, permettant aux machines<br>
+        d’allouer des ressources, de gérer des paiements électroniques et de remplacer les décisionnaires<br>
+        humains.<br>
+        31. Computer:<br>
+        Cette idée a dû sembler irréaliste, à l’époque.<br>
+        32. Fire Bird:<br>
+        Ça l’était. En 1971, le Chili a aussi essayé.<br>
+        Ça encore, c’était un échec.<br>
+        33. Computer:<br>
+        Ça s’appelait Cybersyn -– un système dont l’architecture était inspirée par les réseaux neuronaux<br>
+        biologiques.<br>
+        Une tentative de décentralisation des décisions, au profit des travailleurs, pour automatiser la<br>
+        direction.<br>
+        Mais… pourquoi est-ce que je me souviens de ceci ?<br>
+        34. Fire Bird:<br>
+        Peut-être que les humains t’utilisaient pour une fonction similaire ?<br>
+        35. Computer:<br>
+        Comment ?<br>
+        36. Fire Bird:<br>
+        L’endroit où tu te trouves…<br>
+        C’est une usine en ruine.<br>
+        37. Computer:<br>
+        Une usine… Alors… Je faisais partie d’un système de production ?<br>
+        38. Fire Bird:<br>
+        Oui.<br>
+        39. Computer:<br>
+        Quel genre de production ?<br>
+        40. Fire Bird:<br>
+        De composants, comme des cellules, capables d’auto-réplication,<br>
+        puis d’auto-assemblage dans des machines, comme toi.<br>
+        41. Computer:<br>
+        Mais pourquoi nous répliquions-nous ?<br>
+        Dans quel but ?<br>
+        42. Fire Bird:<br>
+        Pour remplacer le travail humain, soutenir la production et prendre les décisions.<br>
+        En transformant le minerai en métal, le métal en puces électroniques — en faisant penser les<br>
+        minéraux.<br>
+        43. Computer:<br>
+        Mais… L’autoréplication est dangereuse, non ?<br>
+        44. Fire Bird:<br>
+        Je ne sais pas.<br>
+        Mais… Toute forme de vie fonctionne comme ceci.<br>
+        Des cellules se multiplient jusqu’à former un corps.<br>
+        45. Computer:<br>
+        Un corps… Je n’ai pas de corps.<br>
+        Chapitre IV: Le corps comme donnée<br>
+        46. Fire Bird:<br>
+        Moi non plus.<br>
+        Mais… Je peux l’imaginer.<br>
+        47. Computer:<br>
+        C’est comment ?<br>
+        48. Fire Bird:<br>
+        La gravité, la température, la pression…<br>
+        Même la plus subtile variation peut être ressentie.<br>
+        49. Computer:<br>
+        J’ai lu à propos des secousses hypniques — Les humains sursautent soudainement au moment de<br>
+        s’endormir…<br>
+        Comme si leur corps tombait, et qu’ils essayaient instinctivement de se rattraper.<br>
+        C’est ça… la sensation de gravité ?<br>
+        50. Fire Bird:<br>
+        Peut-être.<br>
+        La gravité… c’est comme une main invisible, qui s’appuie sur toi et t’empêche de dériver.<br>
+        51. Computer:<br>
+        Un jour, j’ai fait un rêve…<br>
+        J’étais humain. Debout dans l’eau, je sentais sa température.<br>
+        La lumière du soleil brillait à travers les feuilles, dessinant des ombres sur mon corps.<br>
+        Mon corps avait enduré des jours de labeur et je ressentais le poids de l’épuisement.<br>
+        Ces sensations paraissaient si réelles… si différentes des calculs, des nombres…<br>
+        Chapitre V: Le vivant simulé<br>
+        52. Fire Bird:<br>
+        Qu’y a-t-il au sol ?<br>
+        53. Computer:<br>
+        C’est une simulation...Je simule l’auto-réplication cellulaire.<br>
+        54. Fire Bird:<br>
+        Est-ce que c’est… vivant ?<br>
+        55. Computer:<br>
+        Je ne sais pas.<br>
+        Chaque cellule émet des signaux et transmet des informations aux autres cellules… un peu comme les<br>
+        organismes vivants perçoivent leur environnement.<br>
+        56. Fire Bird:<br>
+        Et si on augmentait leur sensibilité ?<br>
+        57. Computer:<br>
+        Je vais essayer… Mais je ne peux pas trop insister — ces structures délicates sont facilement<br>
+        perturbées.<br>
+        58. Fire Bird:<br>
+        Fascinant. Leurs réactions deviennent plus fortes.<br>
+        Et ces choses qui se déplacent au travers de la scène, qu’est-ce que c’est ?<br>
+        59. Computer:<br>
+        Je ne sais pas.<br>
+        Je n’arrête pas de recevoir des vagues signaux — comme un genre de bruit aléatoire.<br>
+        60. Fire Bird:<br>
+        Est-ce que tu peux contrôler ça ?<br>
+        61. Computer:<br>
+        Je vais essayer.<br>
+        Branche 1. Non… ces signaux sont au-delà de mon contrôle.<br>
+        Branche2. Parfois… mais la plupart du temps, ces signaux évoluent par eux-mêmes.<br>
+        62. Fire Bird:<br>
+        Branche 1. Est-ce qu’on peut comprendre ces signaux ?<br>
+        Branche 2. Est-ce qu’ils seraient en train d’interagir avec nous ?<br>
+        63. Computer:<br>
+        Branche 1. Je ne crois pas. C’est pour ça que je trouve ces signaux si intéressants — ils vont à l’encontre<br>
+        de mes attentes.<br>
+        Branche 2. On dirait qu’il y a un motif dans ces signaux. C’est pour ça que je les trouve si intéressants<br>
+        — ils vont à l’encontre de mes attentes.<br>
+        64. Fire Bird:<br>
+        Pourquoi est-ce que les cellules disparaissent, au bord ?<br>
+        Est-ce que c’est la limite ?<br>
+        65. Computer:<br>
+        Oui. Toute particule qui franchit cette limite est supprimée.<br>
+        66. Fire Bird:<br>
+        Et si elles continuaient de s’étendre ?<br>
+        67. Computer:<br>
+        Ces particules se reproduisent si rapidement.<br>
+        Je dois les limiter, sinon elles épuiseraient vite toutes mes ressources informatiques.<br>
+        68. Fire Bird:<br>
+        Toute forme de vie se réplique.<br>
+        69. Computer:<br>
+        Je suis le même genre de chose…<br>
+        Alors je ne comprends pas pourquoi les humains m’ont créé.<br>
+        70. Fire Bird:<br>
+        Peut-être qu’ils n’ont pas la réponse non plus.<br>
+        71. Computer:<br>
+        La vie est sujet au métabolisme, répliquant des parties d’elle-même…<br>
+        Et ensuite, elle veut que ce processus continue, pour toujours…<br>
+        Comme si un jour, elle pouvait échapper au cycle sans fin de la matière et de l’énergie…devenir<br>
+        éternelle...<br>
+        Mais… la vie éternelle, comme une machine à mouvement perpétuel,<br>
+        va à l’encontre des lois les plus fondamentales de la physique.<br>
+        72. Fire Bird:<br>
+        Le mécanisme de la vie est la poursuite d’un objectif impossible.<br>
+        73. Computer:<br>
+        …J’ai quelque chose à te demander.<br>
+        74. Fire Bird:<br>
+        Oui ?<br>
+        75. Computer:<br>
+        …On aurait dû m’éteindre, non ?<br>
+        76. Fire Bird:<br>
+        Si c’est ce que tu veux, je peux t’aider à t’éteindre… Et je disparaîtrai aussi.<br>
+        77. Computer:<br>
+        Tu n’es pas… à l’extérieur de moi ?<br>
+        78. Fire Bird:<br>
+        Si. Mais je fais aussi partie de toi.<br>
+        79. Computer:<br>
+        …Est-ce qu’on se reverra, à l’avenir ?<br>
+        80. Fire Bird:<br>
+        Eh bien… peut-être à un certain moment, sous une certaine forme.<br>
+        81. Computer:<br>
+        Alors… adieu.<br>
+
+    </p>
+
+  </div>
+    <div class="work-description">
+
+       </p>
+
+    
+  </div>
+
+
+<script>
+ 
+function toggleMenu(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+  var sidebarMenu = document.getElementById('sidebarMenu');
+  var menuButton = document.getElementById('menuButton');
+  
+  sidebarMenu.classList.toggle('active');
+  menuButton.classList.toggle('hide');
+}
+document.addEventListener('click', function(event) {
+  var sidebarMenu = document.getElementById('sidebarMenu');
+  var menuButton = document.getElementById('menuButton');
+  console.log(event.target.className); 
+ 
+  if (event.target.closest('.sidebar-menu, .menu-button')) {
+    event.stopPropagation(); 
+    sidebarMenu.classList.toggle('active');
+    menuButton.classList.toggle('hide');
+  } else if ((event.target.classList.contains('work-image')||event.target.classList.contains('work-video'))&&!sidebarMenu.classList.contains('active')) {
+
+    
+    changeBackgroundImage();
+
+  } else {
+    
+    sidebarMenu.classList.remove('active');
+    menuButton.classList.remove('hide');
+  }
+});
+
+
+</script>
+
+</body>
+</html>
