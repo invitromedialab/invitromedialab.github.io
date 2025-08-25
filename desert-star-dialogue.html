@@ -4,33 +4,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Desert Star | Dialogue</title>
-  <link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png" />
+  <link rel="icon" href="imgs/00320-4177656063.png" type="image/png" />
   <style>
     :root{
-      --bg:#000; --fg:#eaeaea; --muted:#9aa0a6; --accent:#a5b4fc; --glass:rgba(0,0,0,.46); --glass-strong:rgba(0,0,0,.66);
+      --bg:#000; --fg:#eaeaea; --muted:#9aa0a6; --accent:#a5b4fc;
+      --glass:rgba(0,0,0,.46); --glass-strong:rgba(0,0,0,.66);
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;background:var(--bg);color:var(--fg);font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";overflow:hidden}
+
+    html,body{height:100%}
+    body{
+      background:var(--bg);
+      color:var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      overflow:hidden; /* 单屏舞台 */
+    }
 
     /* Layout */
     .stage{position:fixed;inset:0;overflow:hidden}
-    .bg {
-      position: absolute;
-      inset: 0;
-      background: #000 center calc(10%)/cover no-repeat; /* 向下偏移 */
-      filter: saturate(.95) contrast(1.05) brightness(.85);
-      transition: opacity .8s ease, transform 1.2s ease;
-      opacity: 1;
+    .bg{
+      position:absolute; inset:0;
+      background:#000 center calc(10%) / cover no-repeat; /* 背景稍向下偏移 */
+      filter:saturate(.95) contrast(1.05) brightness(.85);
+      transition: transform 1s ease; /* 仅保留轻微缩放动画可选 */
+      opacity:1;
     }
-    .bg.fadeOut{opacity:0;transform:scale(1.03)}
-    .vignette{position:absolute;inset:0;box-shadow: inset 0 0 200px rgba(0,0,0,.65);pointer-events:none}
-    .overlay{position:absolute;inset:0;background: radial-gradient(1200px 600px at 50% 60%, rgba(255,255,255,.08), transparent 60%); pointer-events:none}
+    /* 如需轻微律动效果可给 .bg 加这个类 */
+    .bg.bump{ transform: scale(1.01); }
+
+    /* 叠加层：首屏/切章都在卡片出现时再显现，避免遮挡图片 */
+    .vignette,
+    .overlay{
+      position:absolute; inset:0;
+      opacity:0; transition:opacity .8s ease;
+      pointer-events:none;
+    }
+    .vignette{ box-shadow: inset 0 0 200px rgba(0,0,0,.65); }
+    .overlay{ background: radial-gradient(1200px 600px at 50% 60%, rgba(255,255,255,.08), transparent 60%); }
+    body.ui-ready .vignette,
+    body.ui-ready .overlay{ opacity:1; }
 
     .content{position:absolute;inset:0;display:grid;place-items:center;padding:6vh 5vw}
 
     .card{
       max-width:min(900px,92vw);
-      width:min(900px,92vw);              /* 一致的卡片宽度 */
+      width:min(900px,92vw);
       background:var(--glass);
       backdrop-filter:blur(10px);
       border:1px solid rgba(255,255,255,.08);
@@ -38,11 +56,12 @@
       padding:clamp(18px,3.5vh,36px);
       box-shadow:0 10px 40px rgba(0,0,0,.45);
       max-height:82vh;
-      overflow:hidden;                     /* 由内部文本滚动 */
-      opacity:0;                           /* 初始为0，render时淡入 */
-      transition:opacity .5s ease, transform .6s ease
+      overflow:hidden;                     /* 内部文本滚动 */
+      opacity:0;                           /* 初始隐藏，render时淡入 */
+      transform:translateY(4px);           /* 轻微上飘感 */
+      transition:opacity .5s ease, transform .6s ease;
     }
-    .card.show{opacity:1}
+    .card.show{opacity:1; transform:translateY(0);}
 
     .title{font-weight:700;letter-spacing:.01em;font-size:clamp(18px,2.2vw,26px);color:#fff}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);margin:10px 0 16px}
@@ -53,18 +72,29 @@
       color:#f1f3f4;
       text-align:left;
       overflow:auto;                       /* 长文滚动 */
-      max-height:calc(82vh - 84px)         /* 减去标题和分割线等 */
+      max-height:calc(82vh - 84px);        /* 减去标题和分割线等 */
     }
     .text p{margin:.35em 0}
 
     .progress{position:fixed;top:0;left:0;height:3px;width:100%;background:rgba(255,255,255,.08)}
     .bar{height:100%;width:0%;background:linear-gradient(90deg,#60a5fa,#a78bfa);transition:width .4s ease}
 
-    /* Sidebar */
-    .menu-button{position:fixed;top:22px;right:22px;width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:var(--glass-strong);color:#fff;display:grid;place-items:center;cursor:pointer;z-index:50}
+    /* Sidebar（随卡片一起出现） */
+    .menu-button{
+      position:fixed;top:22px;right:22px;width:42px;height:42px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);background:var(--glass-strong);color:#fff;
+      display:grid;place-items:center;cursor:pointer;z-index:50;
+      opacity:0; transition: opacity .5s ease;
+    }
     .menu-button span{font-size:22px;line-height:1}
+    body.ui-ready .menu-button{ opacity:1; }
 
-    .sidebar{position:fixed;top:0;right:-340px;width:min(320px,85vw);height:100%;background:rgba(10,10,12,.8);backdrop-filter:blur(10px);border-left:1px solid rgba(255,255,255,.08);transition:right .35s ease;z-index:40;display:flex;flex-direction:column}
+    .sidebar{
+      position:fixed;top:0;right:-340px;width:min(320px,85vw);height:100%;
+      background:rgba(10,10,12,.8);backdrop-filter:blur(10px);
+      border-left:1px solid rgba(255,255,255,.08);
+      transition:right .35s ease;z-index:40;display:flex;flex-direction:column
+    }
     .sidebar.active{right:0}
     .side-head{padding:20px 18px 8px;font-weight:700}
     .side-list{overflow:auto;padding:8px 8px 24px}
@@ -88,7 +118,7 @@
     <div class="overlay"></div>
 
     <div class="content">
-      <article class="card" id="card" tabindex="0">
+      <article class="card" id="card" tabindex="0" aria-live="polite">
         <h1 class="title" id="chapter-title">&nbsp;</h1>
         <div class="divider"></div>
         <div class="text" id="chapter-text"></div>
@@ -104,7 +134,12 @@
   </div>
 
   <script>
-    // -------- Chapters data --------
+    // -------- 可调参数 --------
+    const FIRST_CARD_DELAY    = 1000; // 首屏：图片先独占 2000ms
+    const CHAPTER_CARD_DELAY  = 1000;  // 后续切章：图片先独占 900ms
+    const BETWEEN_CHAPTER_PAUSE = 0; // 切换文本与标题的小停顿（越小越利落）
+
+    // -------- 数据 --------
     const chapters = [
       {
         idx: 1,
@@ -215,7 +250,7 @@
         68. Fire Bird:<br>Toute forme de vie se réplique.<br>
         69. Computer:<br>Je suis le même genre de chose… Alors je ne comprends pas pourquoi les humains m’ont créé.<br>
         70. Fire Bird:<br>Peut-être qu’ils n’ont pas la réponse non plus.<br>
-        71. Computer:<br>La vie est sujet au métabolisme, répliquant des parties d’elle-même… Et ensuite, elle veut que ce processus continue, pour toujours… Comme si un jour, elle pouvait échapper au cycle sans fin de la matière et de l’énergie… devenir éternelle... Mais… la vie éternelle, comme une machine à mouvement perpétuel, va à l’encontre des lois les plus fondamentales de la physique.<br>
+        71. Computer:<br>La vie est sujet au métabolisme, répliquant des parties d’elle-même… Et ensuite, elle veut que ce过程继续，pour toujours… Comme si un jour, elle pouvait échapper au cycle sans fin de la matière et de l’énergie… devenir éternelle... Mais… la vie éternelle, comme une machine à mouvement perpétuel, va à l’encontre des lois les plus fondamentales de la physique.<br>
         72. Fire Bird:<br>Le mécanisme de la vie est la poursuite d’un objectif impossible.<br>
         73. Computer:<br>…J’ai quelque chose à te demander.<br>
         74. Fire Bird:<br>Oui ?<br>
@@ -229,8 +264,9 @@
       }
     ];
 
-    // -------- State / elements --------
+    // -------- 状态 / 元素 --------
     let i = 0;
+    let firstRender = true;
     const bg = document.getElementById('bg');
     const card = document.getElementById('card');
     const titleEl = document.getElementById('chapter-title');
@@ -240,7 +276,7 @@
     const sideList = document.getElementById('sideList');
     const menuBtn = document.getElementById('menuBtn');
 
-    // Build sidebar items
+    // 构建侧栏
     chapters.forEach((c, idx)=>{
       const item = document.createElement('div');
       item.className = 'side-item';
@@ -253,7 +289,7 @@
       [...sideList.children].forEach((el,k)=>{ el.classList.toggle('active', k===i); });
     }
 
-    // Image loader with fallbacks (handles folder with spaces)
+    // 背景图加载（带候选与空格兼容）
     function setBackgroundWithFallback(candidates){
       if(!candidates || !candidates.length){ bg.style.backgroundImage = 'none'; return; }
       const img = new Image();
@@ -261,17 +297,14 @@
       const tryNext = ()=>{
         if(p>=candidates.length){ bg.style.backgroundImage = 'none'; return; }
         const src = candidates[p++];
-        img.onload = ()=>{
-          // encode URI to safely handle spaces like "Desert Star"
-          bg.style.backgroundImage = `url('${encodeURI(src)}')`;
-        };
+        img.onload = ()=>{ bg.style.backgroundImage = `url('${encodeURI(src)}')`; };
         img.onerror = tryNext;
         img.src = src;
       };
       tryNext();
     }
 
-    // Preload next background (first candidate)
+    // 预加载下一章第一张图
     function preloadNext(idx){
       const n = chapters[(idx+1)%chapters.length];
       if(!n) return;
@@ -281,33 +314,44 @@
     }
 
     function render(){
-      // Fade out card and bg
+      // 隐藏卡片（文字容器）
       card.classList.remove('show');
-      bg.classList.add('fadeOut');
 
+      // （可选）轻微让背景有个律动
+      bg.classList.remove('bump');
+      void bg.offsetWidth; // 触发重排以重启动画
+      bg.classList.add('bump');
+
+      // 更新内容（立即切图，让图片先出现）
       setTimeout(()=>{
         const c = chapters[i];
         titleEl.innerText = c.title;
         textEl.innerHTML = c.text;
-        textEl.scrollTop = 0; // reset scroll
+        textEl.scrollTop = 0;
         bar.style.width = ((i+1)/chapters.length*100).toFixed(1)+'%';
         setBackgroundWithFallback(c.imageCandidates);
         setActiveInSidebar();
         preloadNext(i);
 
-        // Fade in again
-        requestAnimationFrame(()=>{
-          bg.classList.remove('fadeOut');
-          card.classList.add('show');
-        });
-      }, 160);
+        // 按首屏/后续选择不同的图片独占时间
+        const delay = firstRender ? FIRST_CARD_DELAY : CHAPTER_CARD_DELAY;
+
+        setTimeout(()=>{
+          card.classList.add('show');            // 显示卡片与文字
+          if (firstRender){
+            document.body.classList.add('ui-ready'); // 同步叠加层和菜单
+            firstRender = false;
+          }
+        }, delay);
+
+      }, BETWEEN_CHAPTER_PAUSE);
     }
 
     function goTo(idx){ i = ((idx%chapters.length)+chapters.length)%chapters.length; render(); }
-    function next(){ i = (i+1) % chapters.length; render(); }            // 循环到第一章
-    function prev(){ i = (i-1+chapters.length) % chapters.length; render(); } // 循环到最后一章
+    function next(){ i = (i+1) % chapters.length; render(); }
+    function prev(){ i = (i-1+chapters.length) % chapters.length; render(); }
 
-    // Interactions
+    // 交互
     document.addEventListener('click', (e)=>{
       if(!e.target.closest('.card, .sidebar, .menu-button')) next();   // 点击空白切章
     });
@@ -323,8 +367,8 @@
     }
     menuBtn.addEventListener('click', ()=> toggleSidebar());
 
-    // Initial render
-    render();
+    // 初始渲染
+    window.addEventListener('load', render);
   </script>
 </body>
 </html>
