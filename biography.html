@@ -1,234 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Biography</title>
-<link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png"> 
+<link rel="icon" href="imgs/00320-4177656063.png" type="image/png"/>
 
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  :root{
+    --bg:#0a0b0f;
+    --panel:#101318;
+    --text:#e9eef2;
+    --muted:#a4acb5;
+    --line:rgba(255,255,255,.08);
+    --hover:rgba(255,255,255,.05);
+    --radius:18px;
+    --shadow:0 8px 28px rgba(0,0,0,.35);
+    --maxw: 880px;
   }
 
-  body, html {
-    height: 100%;
-    font-family: 'Verdana Pro Regular', Verdana, sans-serif;
-    background-color: #000;
+  *{margin:0; padding:0; box-sizing:border-box;}
+  html, body{height:100%;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Verdana Pro Regular", Verdana, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+  a{color:inherit; text-decoration:none;}
+  img{max-width:100%; display:block;}
 
-  .menu-button {
-    position: absolute;
-    top: 40px;
-    right: 40px;
-    z-index: 1000;
-    cursor: pointer;
-    background-color: transparent;
-    border: none;
-    color: white;
-  }
-  .work-video
-  {
-    justify-content: center; 
-    align-items: center; 
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    width: 100%;
-    transition: opacity 0.5s ease; 
-  }
+  /* ====== 顶部留白 ====== */
+  .header-space{height: 64px;}
 
-
-  .work-image {
-  width: 100vw;
-  justify-content: center; 
-  align-items: center; 
-  background-position: center; 
-  background-repeat: no-repeat; 
-  position: fixed; 
-  top: 0;
-  left: 0;
-  transition: opacity 0.5s ease; 
-  }
-
-  
-  .work-description {
-    position: relative; 
-    left: 20%; 
-    top: 8%;
-    bottom: 0%; 
-    color: #fff; 
-    font-size: 0.1em; 
-    padding: 10px; 
-    border-radius: 5px; 
-    max-width: 35%; 
-    box-sizing: border-box;
-    z-index: 1;
-    text-align: justify;
-  }
-
-  .menu-button:before {
-    content: '≡';
-    font-size: 2em;
-    z-index: 1;
-  }
-
-  .sidebar-menu {
+  /* ====== 右侧菜单（素＆整齐，已半透明） ====== */
+  .menu-button{
     position: fixed;
-    top: 8%;
-    right: -20%;
-    width: 15%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);;
-    padding: 50px;
-    transition: right 0.5s;
-    box-sizing: border-box;
-    color: #808080; 
-    text-align: center;
-    z-index: 1;
+    top: 16px;
+    right: 16px;
+    z-index: 1001;
+    width: 44px; height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(16,19,24,.6);   /* 半透明 */
+    color: #fff;
+    display: grid; place-items: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);       /* 玻璃模糊 */
+  }
+  .menu-button::before{content:'≡'; font-size: 22px; line-height:1;}
+
+  .sidebar-menu{
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 280px;
+    height: 100dvh;
+    padding: 18px;
+    background: rgba(12,14,18,.86);   /* 半透明 */
+    border-left: 1px solid var(--line);
+    color:#fff;
+    text-align:left;
+    transition: right .3s ease;
+    z-index: 1002;
+    backdrop-filter: blur(10px);       /* 玻璃模糊 */
+    box-shadow: -10px 0 30px rgba(0,0,0,.35);
+    display: flex; flex-direction: column;
+  }
+  .sidebar-menu.active{ right: 0; }
+
+  .side-list{
+    list-style:none;
+    display: grid;
+    grid-auto-rows: min-content;
+    gap: 6px;
+    margin: 6px 2px;
+    padding: 6px 2px;
+  }
+  .side-list li{
+    border: 1px solid transparent;
+    border-radius: 10px;
+  }
+  .side-link{
+    display:block;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.35;
+    border-radius: 10px;
+  }
+  .side-link:hover{ background: var(--hover); border: 1px solid var(--line); }
+  .side-current .side-link{ background: rgba(255,255,255,.06); border: 1px solid var(--line); }
+
+  /* 打开菜单时的遮罩 */
+  .scrim{
+    position: fixed; inset:0;
+    background: rgba(0,0,0,.35);
+    opacity: 0; pointer-events:none;
+    transition: opacity .2s ease;
+    z-index: 1000;
+  }
+  .scrim.show{ opacity: 1; pointer-events:auto; }
+
+  /* ====== 正文容器（半透明卡片） ====== */
+  .bio{
+    width: min(var(--maxw), 92vw);
+    margin: 32px auto 80px;
+    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px); /* 半透明玻璃 */
+    overflow: hidden;
+  }
+  .bio-inner{
+    padding: clamp(18px, 3.4vw, 28px);
+  }
+  .bio h1{
+    font-size: 24px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    color:#fff;
+  }
+  .bio h2{
+    font-size: 18px;
+    margin: 22px 0 10px;
+    color:#fff;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  .lead{
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 15px;
+    margin: 12px 0 18px;
+  }
+  .muted{ color: var(--muted); }
+
+  /* 列表排版 */
+  ul{ list-style: none; padding-left: 0; }
+  .list{
+    display: grid;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .list li{
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+  }
+  .list li:hover{ border-color: var(--line); background: rgba(255,255,255,.03); }
+  .entry{
+    line-height: 1.7;
+    font-size: 15px;
+    color: var(--text);
   }
 
-  .sidebar-menu a, .sidebar-menu div {
-    color: white; 
-    text-decoration: none;
-    display: block;
-    margin-bottom: 10px;
-    font-size: 10px;
+  /* 联系方式区域：按钮组 */
+  .contact{
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.06);   /* 半透明按钮底 */
+    color: #fff;
+    transition: transform .12s ease, background .2s ease, border-color .2s ease;
+    backdrop-filter: blur(6px);
+  }
+  .btn:hover{ background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.16); transform: translateY(-1px); }
+
+  /* —— 禁止正文中非需要的链接可点击 —— */
+  .bio a{ pointer-events: none; }                           /* 默认禁用 */
+  .bio a[href^="mailto:"],
+  .bio a[href*="instagram.com/invitromedialab"]{ pointer-events: auto; } /* 允许邮箱与INS按钮 */
+
+  /* 响应式 */
+  @media (max-width: 768px){
+    .sidebar-menu{ width: 78vw; right: -78vw; }
+    .bio{ margin: 16px auto 64px; }
+    .bio h1{ font-size: 22px; }
+    .bio h2{ font-size: 17px; }
+    .entry, .lead{ font-size: 15px; }
   }
 
-  
-  @media (max-width: 768px) {
-  .sidebar-menu {
-    width: 50%; 
-    right: -50%; 
-   }
-  .sidebar-menu a, .sidebar-menu div {
-  font-size: 8px; 
-   }
-
-
-  }
-
-  .sidebar-menu div.space {
-    height: 20px; 
-  }
-  
-  .menu-button.hide {
-    display: none;
-  }
-
-  .sidebar-menu.active {
-    right: 0;
-  }
+    body {
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+    body.loaded {
+      opacity: 1;
+    }
 </style>
 </head>
 <body>
 
-<button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
-<div class="sidebar-menu" id="sidebarMenu">
-  <a href="index.html">In Vitro</a>
-  <div class="space"></div> 
-  <a href="sunlight-trapped-under-the-earth.html">Sunlight Trapped Under the Earth</a>
-  <a href="temporary-soul.html">Temporary Soul</a>
-  <a href="standing-at-the-center-of-the-continental-shelf.html">Standing at the center of the continental shelf</a>
-  <a href="palace-of-oblivion.html">Palace of oblivion</a>
-  <a href="biography.html">Biography</a>
-</div>
+  <!-- 菜单按钮 -->
+  <button class="menu-button" id="menuButton" aria-label="Open menu"></button>
 
+  <!-- 右侧菜单（去掉小点；更整齐；半透明） -->
+  <nav class="sidebar-menu" id="sidebarMenu" aria-label="Site menu">
+    <ul class="side-list">
+      <li><a class="side-link" href="index.html">In Vitro</a></li>
+      <li><a class="side-link" href="sunlight-trapped-under-the-earth.html">Sunlight Trapped Under the Earth</a></li>
+      <li><a class="side-link" href="temporary-soul.html">Temporary Soul</a></li>
+      <li><a class="side-link" href="standing-at-the-center-of-the-continental-shelf.html">Standing at the center of the continental shelf</a></li>
+      <li><a class="side-link" href="palace-of-oblivion.html">Palace of oblivion</a></li>
+      <li class="side-current"><a class="side-link" href="biography.html" aria-current="page">Biography</a></li>
+    </ul>
+  </nav>
 
-  <div class="work-description">
-    <h1></h1>
-    <p>In Vitro, a multi-media artist duo co-founded by Xiyue Hu and Xing Xiao, engages in media art, 3D filmmaking and development based on game engines, virtual reality, and augmented reality. 
-    Their creations centered around biology, complex systems, and artificial intelligence, involve interdisciplinary collaborations with archaeologists and biologists. 
-    In Vitro holds the view that modern science and humanities are intertwined, not independent or irreducible fields. Utilizing game engines, 
-    they craft real-time simulations of complex systems mirroring ecosystems, They attempt to expand their explorations to discussions on the mechanisms of biological organization, social and economic organization, drawing parallels between the two.<br><br>
-    <h1>Contact</h1>
-    invitromedialab@gmail.com
-    <br><br>
-    <h1>Education:</h1>
-    Xiyue Hu<br>
-    Le Fresnoy - Studio national des arts contemporains,2023-2025<br>
-    Accademia di Belle Arti di Brera,2°Livello,2017<br>
-    <br>
-    Xing Xiao<br>
-    Le Fresnoy - Studio national des arts contemporains,2023-2025<br>
-    École supérieure des Beaux-Arts de Bordeaux,Post-Master Papillon,2022<br>
-    École supérieure des Beaux-Arts de Bordeaux,DNSEP,2020
-    <br><br>
+  <!-- 遮罩 -->
+  <div class="scrim" id="scrim" aria-hidden="true"></div>
 
-    <h1>Solo Exhibitions</h1>
-    <p>Le Dernier Jour du Cambrien, 5UN7 Gallery, Bordeaux, France, 2021<br><br>
-    <h1>Group Exhibitions</h1>
+  <div class="header-space" aria-hidden="true"></div>
 
-    ·Desert Star - Panorma 27, Le Fresnoy, Tourcoing, France 2025<br>
-    ·Nature naturante - Panorma 26, Le Fresnoy, Tourcoing, France 2024<br>
-    ·A-Real Engine - The 18th Digital Art Festival Taipei, Taipei Digital Art Center, Taipei, Taiwan,2023<br>
-    ·The 4th ARTEX, French National Centre for Scientific Research - Institute Systems Complexes(CNRS - ISC-PIF), Paris, France, 2023<br>
-    ·L'Art préhistorique, de l’Atlantique à la Méditerranée, Musée d'Aquitaine, Bordeaux, France,2023<br>
-    ·Jeu de Mondes 2.0, Château d’Eau – Antre Peaux, Bourges, France, 2023<br>
-    ·Chongqing Light and Shadow Art Fesvital Invitation Stage, Chongqing, China, 2022<br>
-    ·Chongqing Holographic Fragments, Chongqing Times Art Museum, Chongqing, China, 2023<br>
-    ·Fluid Identity 流动的身份 , Guangdong Museum of Art, Guangzhou, China, 2022<br>
-    ·Digitale Caverne,Galerie des Tables,Bordeaux, France, 2021<br>
-    ·Bu Liang Ti Tai | What’s Up the Body, online NFT exhibition, YeahDAO, 2021<br>
-    ·From Fake Mountains to Faith & The Colonial Warehouse,Bordeaux Archives, France, 2020<br>
-    ·Eye of Storm 台风眼 , Ultramontane Gallery, Hangzhou, China, 2020<br>
-    ·Night Mess,Espace Saint-Rémi,Bordeaux,2019<br><br>
-     
-    Lectures and Workshops:<br>
-    ·2023, Complex Science × Art Series Seminars, Swarm Club, Online<br>
-    ·2022, Guest lecturer of workshop “The pursuit of technology” of media arts at Sichuan Institute of Fine Arts, Chongqing, China<br><br><br>
+  <!-- 正文 -->
+  <main class="bio" role="main">
+    <div class="bio-inner">
+      <h1>In Vitro</h1>
+      <p class="lead">
+        In Vitro, a multi-media artist duo co-founded by <strong>Xiyue Hu</strong> and <strong>Xing Xiao</strong>, engages in media art, 3D filmmaking and development based on game engines, virtual reality, and augmented reality.
+        Their creations centered around biology, complex systems, and artificial intelligence, involve interdisciplinary collaborations with archaeologists and biologists.
+        In Vitro holds the view that modern science and humanities are intertwined, not independent or irreducible fields. Utilizing game engines,
+        they craft real-time simulations of complex systems mirroring ecosystems. They attempt to expand their explorations to discussions on the mechanisms of biological organization,
+        social and economic organization, drawing parallels between the two.
+      </p>
 
-    </p>
+      <h2>Contact</h2>
+      <div class="contact">
+        <!-- Instagram 按钮（放在邮件前） -->
+        <a class="btn" href="https://www.instagram.com/invitromedialab/" target="_blank" rel="noopener">Instagram</a>
+        <!-- 邮件按钮 -->
+        <a class="btn" href="mailto:invitromedialab@gmail.com">invitromedialab@gmail.com</a>
+      </div>
 
-    
+      <h2>Education</h2>
+      <ul class="list">
+        <li class="entry"><strong>Xiyue Hu</strong><br>
+          Le Fresnoy – Studio national des arts contemporains, 2023–2025<br>
+          Accademia di Belle Arti di Brera, 2° Livello, 2017
+        </li>
+        <li class="entry"><strong>Xing Xiao</strong><br>
+          Le Fresnoy – Studio national des arts contemporains, 2023–2025<br>
+          École supérieure des Beaux-Arts de Bordeaux, Post-Master Papillon, 2022<br>
+          École supérieure des Beaux-Arts de Bordeaux, DNSEP, 2020
+        </li>
+      </ul>
 
-  </div>
-    <div class="work-description">
+      <h2>Solo Exhibitions</h2>
+      <ul class="list">
+        <li class="entry">Le Dernier Jour du Cambrien, 5UN7 Gallery, Bordeaux, France, 2021</li>
+      </ul>
 
-       </p>
+      <h2>Group Exhibitions</h2>
+      <ul class="list">
+        <li class="entry">Desert Star – Panorama 27, Le Fresnoy, Tourcoing, France, 2025</li>
+        <li class="entry">Nature naturante – Panorama 26, Le Fresnoy, Tourcoing, France, 2024</li>
+        <li class="entry">A-Real Engine – The 18th Digital Art Festival Taipei, Taipei Digital Art Center, Taipei, Taiwan, 2023</li>
+        <li class="entry">The 4th ARTEX, French National Centre for Scientific Research – Institute Systems Complexes (CNRS – ISC-PIF), Paris, France, 2023</li>
+        <li class="entry">L'Art préhistorique, de l’Atlantique à la Méditerranée, Musée d'Aquitaine, Bordeaux, France, 2023</li>
+        <li class="entry">Jeu de Mondes 2.0, Château d’Eau – Antre Peaux, Bourges, France, 2023</li>
+        <li class="entry">Chongqing Light and Shadow Art Festival Invitation Stage, Chongqing, China, 2022</li>
+        <li class="entry">Chongqing Holographic Fragments, Chongqing Times Art Museum, Chongqing, China, 2023</li>
+        <li class="entry">Fluid Identity 流动的身份, Guangdong Museum of Art, Guangzhou, China, 2022</li>
+        <li class="entry">Digitale Caverne, Galerie des Tables, Bordeaux, France, 2021</li>
+        <li class="entry">Bu Liang Ti Tai | What’s Up the Body, online NFT exhibition, YeahDAO, 2021</li>
+        <li class="entry">From Fake Mountains to Faith &amp; The Colonial Warehouse, Bordeaux Archives, France, 2020</li>
+        <li class="entry">Eye of Storm 台风眼, Ultramontane Gallery, Hangzhou, China, 2020</li>
+        <li class="entry">Night Mess, Espace Saint-Rémi, Bordeaux, 2019</li>
+      </ul>
 
-    
-  </div>
-
+      <h2>Lectures &amp; Workshops</h2>
+      <ul class="list">
+        <li class="entry">2023 – Complex Science × Art Series Seminars, Swarm Club, Online</li>
+        <li class="entry">2022 – Guest lecturer of workshop “The pursuit of technology” of media arts at Sichuan Institute of Fine Arts, Chongqing, China</li>
+      </ul>
+    </div>
+  </main>
 
 <script>
- 
-function toggleMenu(event) {
-  if (event) {
-    event.stopPropagation();
+  // 菜单交互
+  const menuBtn = document.getElementById('menuButton');
+  const sidebar = document.getElementById('sidebarMenu');
+  const scrim = document.getElementById('scrim');
+
+  function openMenu(open){
+    sidebar.classList.toggle('active', open);
+    scrim.classList.toggle('show', open);
   }
-  var sidebarMenu = document.getElementById('sidebarMenu');
-  var menuButton = document.getElementById('menuButton');
-  
-  sidebarMenu.classList.toggle('active');
-  menuButton.classList.toggle('hide');
-}
-document.addEventListener('click', function(event) {
-  var sidebarMenu = document.getElementById('sidebarMenu');
-  var menuButton = document.getElementById('menuButton');
-  console.log(event.target.className); 
- 
-  if (event.target.closest('.sidebar-menu, .menu-button')) {
-    event.stopPropagation(); 
-    sidebarMenu.classList.toggle('active');
-    menuButton.classList.toggle('hide');
-  } else if ((event.target.classList.contains('work-image')||event.target.classList.contains('work-video'))&&!sidebarMenu.classList.contains('active')) {
+  menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(!sidebar.classList.contains('active')); });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') openMenu(false); });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.sidebar-menu, .menu-button')) openMenu(false);
+  });
+  sidebar.addEventListener('click', (e)=>{
+    const a = e.target.closest('a');
+    if(a) openMenu(false);
+  });
 
-    
-    changeBackgroundImage();
-
-  } else {
-    
-    sidebarMenu.classList.remove('active');
-    menuButton.classList.remove('hide');
-  }
-});
-
-
+    // 等页面加载完成后再给 body 加上 loaded 类
+  window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+  });
 </script>
 
 </body>
