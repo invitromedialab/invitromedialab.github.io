@@ -19,58 +19,106 @@ html,body{
   transition:opacity .7s ease; /* 对齐默认 IN/OUT 700ms */
 }
 
-/* Menu button（层级提高，确保永远在媒体之上） */
+/* ====== 菜单按钮：方形外框 + 轻磨砂 ====== */
 .menu-button{
   position:absolute; top:40px; right:40px;
-  z-index:1002;                /* ↑ 提高，避免被媒体/特效盖住 */
-  cursor:pointer; background:transparent; border:none; color:#fff
+  z-index:1002;
+  cursor:pointer;
+  width:40px; height:40px;
+  border-radius:8px;                      /* 方形，带轻微圆角 */
+  background:rgba(255,255,255,0.06);
+  border:0px solid rgba(255,255,255,0.6); /* 白色描边 */
+  color:#fff;
+  display:grid; place-items:center;
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  transition:background-color .2s ease, transform .1s ease;
 }
-.menu-button::before{content:'≡';font-size:2em;z-index:1}
+.menu-button::before{content:'≡';font-size:1.4em;line-height:1}
+.menu-button:hover{background:rgba(255,255,255,0.12)}
+.menu-button:active{transform:scale(0.95)}
 .menu-button.hide{display:none}
 
-/* Sidebar */
+/* ====== 侧栏：磨砂玻璃效果 ====== */
 .sidebar-menu{
   position:fixed; top:8%; right:-20%; width:15%; height:100%;
-  background:rgba(0,0,0,.5); padding:50px; transition:right .5s;
+  padding:50px;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.08);
+  border-right:none;
+  box-shadow:0 20px 50px rgba(0,0,0,0.35);
   color:#808080; text-align:center;
-  z-index:1001;                /* ↑ 保证在媒体元素之上 */
+  transition:right .5s;
+  z-index:1001;
 }
-.sidebar-menu a,.sidebar-menu div{
-  color:#fff; text-decoration:none; display:block; margin-bottom:10px; font-size:10px
-}
-.sidebar-menu div.space{height:20px}
 .sidebar-menu.active{right:0}
+.sidebar-menu div.space{height:20px}
 
-/* Media */
+/* ====== 菜单链接 ====== */
+.sidebar-menu a{
+  position:relative;
+  display:block;
+  margin-bottom:10px;
+  padding:3px 0;
+  font-size:12px;
+  color:#fff;
+  text-decoration:none;
+  text-align:center;
+  border-radius:6px;
+  transition:background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.sidebar-menu a:hover{
+  background:rgba(255,255,255,.12);
+  color:#fff;
+}
+
+/* ====== 已选页面：淡白外框/底色 ====== */
+.sidebar-menu a[aria-current="page"]{
+  color:#fff;
+  font-weight:600;
+  background:rgba(255,255,255,0.08);       /* 微亮背景 */
+  border:0px solid rgba(255,255,255,0.35); /* 白色半透明外框 */
+  border-radius:6px;
+}
+
+/* 禁用右侧白色提示（如之前有基于 title 的 tooltip） */
+.sidebar-menu a[title]:hover::after{
+  display:none !important; content:none !important;
+}
+
+/* ====== 媒体层 ====== */
 .work-image,.work-video{
   position:fixed; inset:0; width:100vw; height:100vh;
   object-fit:cover; background-position:center; background-repeat:no-repeat;
-  transition:opacity .5s ease; /* 和 JS 的 crossfade 一致 */
-  will-change:opacity;         /* 平滑过渡，减少“跳一下” */
+  transition:opacity .5s ease;
+  will-change:opacity;
 }
 .work-image{display:block; opacity:1}
 .work-video{display:none; opacity:0}
 
-/* Description（如有用到） */
+/* ====== 说明文字（如使用） ====== */
 .work-description{
   position:absolute; left:2%; bottom:5%; color:#fff; font-size:.1em;
   padding:10px; border-radius:5px; max-width:27%; z-index:2; text-align:justify
 }
 
-/* Responsive */
+/* ====== 自适应 ====== */
 @media (max-width:768px){
   .sidebar-menu{width:50%; right:-50%}
-  .sidebar-menu a,.sidebar-menu div{font-size:8px}
+  .sidebar-menu a,.sidebar-menu div{font-size:12px}
   .work-image,.work-video{height:100vh; object-fit:cover}
 }
 
-/* 无障碍：减少动画时统一关闭过渡，避免不同步 */
+/* ====== 无障碍：减少动画时统一关闭过渡 ====== */
 @media (prefers-reduced-motion: reduce){
   .ivt-fade-overlay,
   .work-image,.work-video,
   .sidebar-menu{ transition:none !important }
 }
-/* 预启动阶段：隐藏正文，避免文字抢先一帧亮起 */
+
+/* ====== 预启动阶段：隐藏正文，避免文字抢先一帧亮起 ====== */
 html.ivt-preboot body > :not(.ivt-fade-overlay){
   visibility: hidden !important;
 }

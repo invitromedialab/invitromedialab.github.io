@@ -1,4 +1,7 @@
 (() => {
+  // —— 将 ivt-preboot 整合进 JS：脚本加载时立即加上，防止首帧抖动 ——
+  try { document.documentElement.classList.add('ivt-preboot'); } catch(e){}
+
   /** ========= Site-wide nav config ========= */
   const NAV = {
     basePath: "",
@@ -127,6 +130,7 @@
       const a = document.createElement("a");
       a.href = base + item.href;
       a.textContent = item.label;
+      a.title = item.label; // ★ 新增：用于悬浮提示
       if (item.href === here) a.setAttribute("aria-current", "page");
       nav.appendChild(a);
     });
@@ -152,7 +156,7 @@
     return { media: [] };
   }
 
-  /** ========= 首帧预加载：确保进入页淡入与媒体/字体同步 ========= */
+  /** ========= 首帧预加载 ========= */
   function preloadMediaItem(item) {
     if (!item) return Promise.resolve();
 
@@ -172,7 +176,7 @@
       return new Promise(res => {
         const v = document.createElement("video");
         v.preload = "auto";
-        v.muted = true;      // 移动端更容易拿到首帧
+        v.muted = true;
         v.playsInline = true;
         v.src = src;
         const done = () => { v.removeAttribute("src"); v.load(); res(); };
@@ -182,7 +186,7 @@
     }
   }
 
-  /** ========= 媒体逻辑（图片/视频平滑交叉淡入） ========= */
+  /** ========= 媒体交叉淡入 ========= */
   function initMedia(raw) {
     const cfg = {
       ...defaults,
@@ -432,7 +436,7 @@
 
       const cfg = await loadConfig();
 
-      // —— 计算首项并预加载（图片 decode / 视频 loadeddata）—— //
+      // —— 计算首项并预加载 —— //
       const mediaArr = Array.isArray(cfg.media) ? cfg.media : [];
       const startIdx = Math.max(0, Math.min(+cfg.startIndex || 0, mediaArr.length - 1));
       const firstItem = mediaArr[startIdx];
@@ -445,7 +449,7 @@
         try { await document.fonts.ready; } catch {}
       }
 
-      // 资源/字体已就位，初始化媒体
+      // 初始化媒体
       initMedia(cfg);
 
       wireExitFade();
