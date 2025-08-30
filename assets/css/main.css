@@ -27,7 +27,7 @@ html,body{
   width:40px; height:40px;
   border-radius:8px;                      /* 方形，轻微圆角 */
   background:rgba(255,255,255,0.06);
-  border:0px solid rgba(255,255,255,0.6); /* 白色描边 */
+  border:0;                               /* 无描边 */
   color:#fff;
   display:grid; place-items:center;
   backdrop-filter:blur(6px);
@@ -79,7 +79,7 @@ html,body{
   color:#fff;
   font-weight:600;
   background:rgba(255,255,255,0.08);       /* 微亮背景 */
-  border:0px solid rgba(255,255,255,0.35); /* 半透明白色外框 */
+  border:0;                                 /* 保持无描边 */
   border-radius:6px;
 }
 
@@ -98,32 +98,88 @@ html,body{
 .work-image{display:block; opacity:1}
 .work-video{display:none; opacity:0}
 
-/* ====== 左下角文字（说明内容） ====== */
-.work-description{
-  position:absolute;
-  left:2%; bottom:5%;
-  color:#fff;
-  font-size:14px;              /* 默认字体大小（桌面端） */
-  line-height:1.5;
-  padding:10px;
-  border-radius:5px;
-  max-width:27%;               /* 桌面端比较窄 */
-  z-index:2;
-  text-align:justify;
+/* ================== 说明块：固定左下角 + 固定高 + 超出滚动 + 磨砂 ================== */
+:root{
+  /* 桌面端可调参数 */
+  --desc-width: 28rem;
+  --desc-height: 260px;
+
+  /* 手机端可调参数 */
+  --desc-width-mobile: 92vw;
+  --desc-height-mobile: 42vh;
 }
 
-/* 手机端优化：放大文字 & 加宽 */
+.work-description{
+  position:absolute;
+  /* 锚定左下角 */
+  top:auto; right:auto;
+  left:2%; bottom:5%;
+  z-index:2;
+
+  /* 固定尺寸 */
+  width:var(--desc-width);
+  height:var(--desc-height);
+  max-width:none !important;
+  max-height:none !important;
+
+  /* 文本样式 */
+  color:#fff;
+  font-size:14px;
+  line-height:1.55;
+  text-align:justify;
+
+  /* 内边距与圆角 */
+  padding:12px 14px;
+  border-radius:8px;
+
+  /* 超出滚动（避免把整页顶乱） */
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+
+  /* 字符折行 */
+  overflow-wrap:break-word;
+  word-break:break-word;
+  hyphens:auto;
+
+  /* 背板：半透明 + 磨砂，压住背景图干扰 */
+  background:rgba(0,0,0,0.42);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  border:none ;
+  box-shadow:0 8px 30px rgba(0,0,0,0.35);
+}
+
+.work-description h1{
+  font-size:1.15em;
+  margin:0 0 .45em 0;
+}
+.work-description p{ margin:.6em 0; }
+
+/* （可选）说明块内部滚动条样式，仅影响 .work-description */
+.work-description::-webkit-scrollbar{ width:6px; height:6px; }
+.work-description::-webkit-scrollbar-thumb{
+  background: none ;
+  border-radius: 6px;
+}
+.work-description::-webkit-scrollbar-track{ background: transparent; }
+
+/* ====== 手机上可读性优化（仍固定左下角 + 固定高） ====== */
 @media (max-width:768px){
   .work-description{
-    left:5%; right:5%;
-    bottom:8%;
-    max-width:90%;             /* 占满屏幕宽度，留一点边距 */
-    font-size:16px;            /* 提高字号方便阅读 */
-    text-align:left;           /* 左对齐更适合窄屏 */
+    left:4%;
+    bottom:max(8%, env(safe-area-inset-bottom));
+    width:var(--desc-width-mobile);
+    height:var(--desc-height-mobile);
+
+    font-size:clamp(13px, 3.6vw, 15px);
+    line-height:1.6;
+    text-align:left;
   }
 }
 
-/* ====== 自适应菜单 ====== */
+/* ====== 自适应菜单（侧栏宽度在手机上改为 50%） ====== */
 @media (max-width:768px){
   .sidebar-menu{width:50%; right:-50%}
   .sidebar-menu a,.sidebar-menu div{font-size:12px}
