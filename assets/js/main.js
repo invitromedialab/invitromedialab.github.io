@@ -8,6 +8,7 @@
     links: [
       { href: "index.html",                                      label: "In Vitro" },
       { divider: true },
+      { href: "desert-star.html",                                label: "Desert Star" },
       { href: "sunlight-trapped-under-the-earth.html",           label: "Sunlight Trapped Under the Earth" },
       { href: "temporary-soul.html",                             label: "Temporary Soul" },
       { href: "standing-at-the-center-of-the-continental-shelf.html", label: "Standing at the center of the continental shelf" },

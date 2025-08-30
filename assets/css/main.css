@@ -25,7 +25,7 @@ html,body{
   z-index:1002;
   cursor:pointer;
   width:40px; height:40px;
-  border-radius:8px;                      /* 方形，带轻微圆角 */
+  border-radius:8px;                      /* 方形，轻微圆角 */
   background:rgba(255,255,255,0.06);
   border:0px solid rgba(255,255,255,0.6); /* 白色描边 */
   color:#fff;
@@ -61,7 +61,7 @@ html,body{
   position:relative;
   display:block;
   margin-bottom:10px;
-  padding:3px 0;
+  padding:8px 0;
   font-size:12px;
   color:#fff;
   text-decoration:none;
@@ -79,7 +79,7 @@ html,body{
   color:#fff;
   font-weight:600;
   background:rgba(255,255,255,0.08);       /* 微亮背景 */
-  border:0px solid rgba(255,255,255,0.35); /* 白色半透明外框 */
+  border:0px solid rgba(255,255,255,0.35); /* 半透明白色外框 */
   border-radius:6px;
 }
 
@@ -98,13 +98,32 @@ html,body{
 .work-image{display:block; opacity:1}
 .work-video{display:none; opacity:0}
 
-/* ====== 说明文字（如使用） ====== */
+/* ====== 左下角文字（说明内容） ====== */
 .work-description{
-  position:absolute; left:2%; bottom:5%; color:#fff; font-size:.1em;
-  padding:10px; border-radius:5px; max-width:27%; z-index:2; text-align:justify
+  position:absolute;
+  left:2%; bottom:5%;
+  color:#fff;
+  font-size:14px;              /* 默认字体大小（桌面端） */
+  line-height:1.5;
+  padding:10px;
+  border-radius:5px;
+  max-width:27%;               /* 桌面端比较窄 */
+  z-index:2;
+  text-align:justify;
 }
 
-/* ====== 自适应 ====== */
+/* 手机端优化：放大文字 & 加宽 */
+@media (max-width:768px){
+  .work-description{
+    left:5%; right:5%;
+    bottom:8%;
+    max-width:90%;             /* 占满屏幕宽度，留一点边距 */
+    font-size:16px;            /* 提高字号方便阅读 */
+    text-align:left;           /* 左对齐更适合窄屏 */
+  }
+}
+
+/* ====== 自适应菜单 ====== */
 @media (max-width:768px){
   .sidebar-menu{width:50%; right:-50%}
   .sidebar-menu a,.sidebar-menu div{font-size:12px}
