@@ -1,0 +1,83 @@
+/* Reset */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* Base */
+html,body{
+  height:100%;
+  font-family:'Verdana Pro Regular',Verdana,sans-serif;
+  background:#000;             /* 防首帧闪白 */
+}
+
+/* ====== 顶层黑幕（与 main.js 的 FADE 匹配）====== */
+.ivt-fade-overlay{
+  position:fixed; inset:0;
+  background:#000;
+  opacity:1;                   /* 初始黑场，JS 下一帧降到 0 */
+  pointer-events:none;
+  z-index:99999;               /* 盖住所有内容 */
+  will-change:opacity;         /* 提前告诉浏览器优化 */
+  transition:opacity .7s ease; /* 对齐默认 IN/OUT 700ms */
+}
+
+/* Menu button（层级提高，确保永远在媒体之上） */
+.menu-button{
+  position:absolute; top:40px; right:40px;
+  z-index:1002;                /* ↑ 提高，避免被媒体/特效盖住 */
+  cursor:pointer; background:transparent; border:none; color:#fff
+}
+.menu-button::before{content:'≡';font-size:2em;z-index:1}
+.menu-button.hide{display:none}
+
+/* Sidebar */
+.sidebar-menu{
+  position:fixed; top:8%; right:-20%; width:15%; height:100%;
+  background:rgba(0,0,0,.5); padding:50px; transition:right .5s;
+  color:#808080; text-align:center;
+  z-index:1001;                /* ↑ 保证在媒体元素之上 */
+}
+.sidebar-menu a,.sidebar-menu div{
+  color:#fff; text-decoration:none; display:block; margin-bottom:10px; font-size:10px
+}
+.sidebar-menu div.space{height:20px}
+.sidebar-menu.active{right:0}
+
+/* Media */
+.work-image,.work-video{
+  position:fixed; inset:0; width:100vw; height:100vh;
+  object-fit:cover; background-position:center; background-repeat:no-repeat;
+  transition:opacity .5s ease; /* 和 JS 的 crossfade 一致 */
+  will-change:opacity;         /* 平滑过渡，减少“跳一下” */
+}
+.work-image{display:block; opacity:1}
+.work-video{display:none; opacity:0}
+
+/* Description（如有用到） */
+.work-description{
+  position:absolute; left:2%; bottom:5%; color:#fff; font-size:.1em;
+  padding:10px; border-radius:5px; max-width:27%; z-index:2; text-align:justify
+}
+
+/* Responsive */
+@media (max-width:768px){
+  .sidebar-menu{width:50%; right:-50%}
+  .sidebar-menu a,.sidebar-menu div{font-size:8px}
+  .work-image,.work-video{height:100vh; object-fit:cover}
+}
+
+/* 无障碍：减少动画时统一关闭过渡，避免不同步 */
+@media (prefers-reduced-motion: reduce){
+  .ivt-fade-overlay,
+  .work-image,.work-video,
+  .sidebar-menu{ transition:none !important }
+}
+/* 预启动阶段：隐藏正文，避免文字抢先一帧亮起 */
+html.ivt-preboot body > :not(.ivt-fade-overlay){
+  visibility: hidden !important;
+}
+
+/* 减少动画模式下也同样隐藏，防止闪烁 */
+@media (prefers-reduced-motion: reduce){
+  html.ivt-preboot body > :not(.ivt-fade-overlay){
+    visibility: hidden !important;
+  }
+}

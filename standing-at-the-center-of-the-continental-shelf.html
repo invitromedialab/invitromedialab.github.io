@@ -1,252 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Standing at the center of the continental shelf</title>
-<link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png"> 
-
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body, html {
-    height: 100%;
-    font-family: 'Verdana Pro Regular', Verdana, sans-serif;
-    background-color: #000;
-  }
-
-  .menu-button {
-    position: absolute;
-    top: 40px;
-    right: 40px;
-    z-index: 1000;
-    cursor: pointer;
-    background-color: transparent;
-    border: none;
-    color: white;
-  }
-  .work-video
-  {
-    justify-content: center; 
-    align-items: center; 
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    width: 100%;
-    transition: opacity 0.5s ease; 
-  }
-
-
-  .work-image {
-  width: 100vw;
-  justify-content: center; 
-  align-items: center; 
-  background-position: center; 
-  background-repeat: no-repeat; 
-  position: fixed; 
-  top: 0;
-  left: 0;
-  transition: opacity 0.5s ease; 
-  }
-
-  
-  .work-description {
-    position: absolute; 
-    left: 2%; 
-    bottom: 5%; 
-    color: #fff; 
-    font-size: 0.1em; 
-    padding: 10px; 
-    border-radius: 5px; 
-    max-width: 27%; 
-    box-sizing: border-box;
-    z-index: 1;
-    text-align: justify;
-  }
-
-  .menu-button:before {
-    content: '≡';
-    font-size: 2em;
-    z-index: 1;
-  }
-
-  .sidebar-menu {
-    position: fixed;
-    top: 8%;
-    right: -20%;
-    width: 15%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);;
-    padding: 50px;
-    transition: right 0.5s;
-    box-sizing: border-box;
-    color: #808080; 
-    text-align: center;
-    z-index: 1;
-  }
-
-  .sidebar-menu a, .sidebar-menu div {
-    color: white; 
-    text-decoration: none;
-    display: block;
-    margin-bottom: 10px;
-    font-size: 10px;
-  }
-
-  
-  @media (max-width: 768px) {
-  .sidebar-menu {
-    width: 50%; 
-    right: -50%; 
-   }
-  .sidebar-menu a, .sidebar-menu div {
-  font-size: 8px; 
-   }
-   .work-image, .work-video {
-  height: 100vh; 
-  object-fit: cover; 
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-
-  }
-
-  .sidebar-menu div.space {
-    height: 20px; 
-  }
-  
-  .menu-button.hide {
-    display: none;
-  }
-
-  .sidebar-menu.active {
-    right: 0;
-  }
-</style>
+  <script>document.documentElement.classList.add('ivt-preboot');</script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Standing at the center of the continental shelf</title>
+  <link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png">
+  <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
+  <!-- 菜单由 assets/js/main.js 自动注入 -->
 
-<button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
-<div class="sidebar-menu" id="sidebarMenu">
-  <a href="index.html">In Vitro</a>
-  <div class="space"></div> 
-  <a href="sunlight-trapped-under-the-earth.html">Sunlight Trapped Under the Earth</a>
-  <a href="temporary-soul.html">Temporary Soul</a>
-  <a href="standing-at-the-center-of-the-continental-shelf.html">Standing at the center of the continental shelf</a>
-  <a href="palace-of-oblivion.html">Palace of oblivion</a>
-  <a href="biography.html">Biography</a>
-</div>
+  <video class="work-video" playsinline muted loop></video>
+  <img class="work-image" alt="Work Image">
 
-
-<video class="work-video" autoplay loop muted><source src="" type="video/mp4" display= "none"></video>
-<img src="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/museeaquitaine2.png?raw=true" alt="Work Image" class="work-image" display= "block">
   <div class="work-description">
     <h1>Standing at the center of the continental shelf</h1>
-    <p>VR game<br>
-    <p>2023<br>
-    The continental shelf is like a giant, with the caves representing its inner body. The search for the center of the land will never yield a result because the land is essentially a constantly moving and metabolizing island. </p>
-    Organisms self-generate, much like a video game program, being their own code and abiding by their own laws. However, the path to autonomy is the most challenging one. 
-    Standing at the center of the continental shelf connects human imagination with machine imagination, situating technological objects and the human society built upon them in the context of biological history.
+    <p>VR game</p>
+    <p>2023</p>
+    <p>
+      The continental shelf is like a giant, with the caves representing its inner body. The search for the center of the land will never yield a result because the land is essentially a constantly moving and metabolizing island.
+      Organisms self-generate, much like a video game program, being their own code and abiding by their own laws. However, the path to autonomy is the most challenging one.
+      Standing at the center of the continental shelf connects human imagination with machine imagination, situating technological objects and the human society built upon them in the context of biological history.
     </p>
-    
   </div>
 
-
-<script>
- 
-let imageIndex = 0;
-const images = [
-  'https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/museeaquitaine2.png?raw=true',
-  'https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/museeaquitaine.png?raw=true',
-  'https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/setenir1.png?raw=true',
-  
-  { type: 'video', src: 'https://github.com/invitromedialab/invitromedialab.github.io/raw/main/videos/StandingCenterContinentalShelf_web.f100040.mp4' },  
-
-    
-];
-function changeBackgroundImage() {
-  imageIndex = (imageIndex + 1) % images.length;
-  console.log("Current image index:", imageIndex);
-
-  const workImage = document.querySelector('.work-image');
-  const workVideo = document.querySelector('.work-video');
-  const currentMedia = images[imageIndex];
-
-  
-  workImage.style.opacity = 0;
-  workVideo.style.opacity = 0;
-
-  
-  setTimeout(() => {
-    if (typeof currentMedia === 'string') {
-      
-      workImage.onload = () => fadeIn(workImage); 
-      workImage.src = currentMedia; 
-      workVideo.pause(); 
-      workVideo.style.display = 'none'; 
-      workImage.style.display = 'block';
-    } else if (currentMedia.type === 'video') {
-      
-      workImage.style.display = 'none';
-      workVideo.style.display = 'block';
-      workVideo.src = currentMedia.src; 
-      workVideo.onloadeddata = () => fadeIn(workVideo); 
-      workVideo.play(); 
-    }
-  }, 500); 
-}
-
-function fadeIn(element) {
-  element.style.opacity = 1;
-}
-
-function toggleMenu(event) {
-  if (event) {
-    event.stopPropagation();
+  <script id="page-media-config" type="application/json">
+  {
+    "startIndex": 0,
+    "transitionMs": 500,
+    "media": [
+      { "type": "image", "src": "https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/museeaquitaine2.png?raw=true" },
+      { "type": "image", "src": "https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/museeaquitaine.png?raw=true" },
+      { "type": "image", "src": "https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/setenir1.png?raw=true" },
+      { "type": "video", "src": "https://github.com/invitromedialab/invitromedialab.github.io/raw/main/videos/StandingCenterContinentalShelf_web.f100040.mp4" }
+    ]
   }
-  var sidebarMenu = document.getElementById('sidebarMenu');
-  var menuButton = document.getElementById('menuButton');
-  
-  sidebarMenu.classList.toggle('active');
-  menuButton.classList.toggle('hide');
-}
-window.onload = function() {
-  const workVideo = document.querySelector('.work-video');
-  if (workVideo) {
-    workVideo.pause(); 
-    workVideo.display = 'none';
-  }
-};
+  </script>
 
-document.addEventListener('click', function(event) {
-  var sidebarMenu = document.getElementById('sidebarMenu');
-  var menuButton = document.getElementById('menuButton');
-  console.log(event.target.className); 
-  
-  if (event.target.closest('.sidebar-menu, .menu-button')) {
-    event.stopPropagation(); 
-    sidebarMenu.classList.toggle('active');
-    menuButton.classList.toggle('hide');
-  } else if ((event.target.classList.contains('work-image')||event.target.classList.contains('work-video'))&&!sidebarMenu.classList.contains('active')) {
-
-    
-    changeBackgroundImage();
-
-  } else {
-    
-    sidebarMenu.classList.remove('active');
-    menuButton.classList.remove('hide');
-  }
-});
-
-
-</script>
-
+  <script src="assets/js/main.js" defer></script>
 </body>
 </html>
