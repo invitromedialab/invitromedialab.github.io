@@ -26,13 +26,11 @@
       position:absolute; inset:0;
       background:#000 center calc(10%) / cover no-repeat; /* 背景稍向下偏移 */
       filter:saturate(.95) contrast(1.05) brightness(.85);
-      transition: transform 1s ease; /* 仅保留轻微缩放动画可选 */
+      transition: transform 1s ease;
       opacity:1;
     }
-    /* 如需轻微律动效果可给 .bg 加这个类 */
     .bg.bump{ transform: scale(1.01); }
 
-    /* 叠加层：首屏/切章都在卡片出现时再显现，避免遮挡图片 */
     .vignette,
     .overlay{
       position:absolute; inset:0;
@@ -58,7 +56,7 @@
       max-height:82vh;
       overflow:hidden;                     /* 内部文本滚动 */
       opacity:0;                           /* 初始隐藏，render时淡入 */
-      transform:translateY(4px);           /* 轻微上飘感 */
+      transform:translateY(4px);
       transition:opacity .5s ease, transform .6s ease;
     }
     .card.show{opacity:1; transform:translateY(0);}
@@ -71,15 +69,15 @@
       line-height:1.7;
       color:#f1f3f4;
       text-align:left;
-      overflow:auto;                       /* 长文滚动 */
-      max-height:calc(82vh - 84px);        /* 减去标题和分割线等 */
+      overflow:auto;
+      max-height:calc(82vh - 84px);
     }
     .text p{margin:.35em 0}
 
     .progress{position:fixed;top:0;left:0;height:3px;width:100%;background:rgba(255,255,255,.08)}
     .bar{height:100%;width:0%;background:linear-gradient(90deg,#60a5fa,#a78bfa);transition:width .4s ease}
 
-    /* Sidebar（随卡片一起出现） */
+    /* 菜单按钮 */
     .menu-button{
       position:fixed;top:22px;right:22px;width:42px;height:42px;border-radius:14px;
       border:1px solid rgba(255,255,255,.12);background:var(--glass-strong);color:#fff;
@@ -103,11 +101,25 @@
     .side-idx{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.1);font-size:12px}
     .side-title{font-size:14px}
 
-    /* Mobile tweaks */
+    /* ★ 新增：返回主页胶囊按钮（与菜单对称放左上） */
+    .home-link{
+      position:fixed; top:22px; left:22px; height:42px; max-width:48vw;
+      display:flex; align-items:center; gap:10px; padding:0 14px;
+      border-radius:14px; border:1px solid rgba(255,255,255,.12);
+      background:var(--glass-strong); color:#fff; text-decoration:none;
+      z-index:50; backdrop-filter:blur(10px);
+      font-size:14px; line-height:42px; opacity:0; transition:opacity .5s ease, transform .3s ease;
+      transform:translateY(-2px);
+    }
+    .home-link:hover{ transform:translateY(-1px); }
+    .home-link .dot{width:8px;height:8px;border-radius:999px;background:linear-gradient(90deg,#60a5fa,#a78bfa)}
+    body.ui-ready .home-link{ opacity:1; }
+
     @media (max-width:640px){
       .card{border-radius:18px}
       .title{font-size:clamp(18px,5vw,22px)}
       .text{font-size:clamp(14px,3.8vw,18px)}
+      .home-link{height:38px; line-height:38px; font-size:13px}
     }
   </style>
 </head>
@@ -126,6 +138,12 @@
     </div>
 
     <div class="progress"><div class="bar" id="bar"></div></div>
+
+    <!-- ★ 新增：返回主页 -->
+    <a class="home-link" href="https://invitromedialab.com" aria-label="Retour à l'accueil">
+      invitromedialab.com
+    </a>
+
     <button class="menu-button" id="menuBtn" aria-label="Ouvrir le menu"><span>≡</span></button>
     <nav class="sidebar" id="sidebar" aria-label="Chapitres">
       <div class="side-head">Chapitres</div>
@@ -135,12 +153,12 @@
 
   <script>
     // -------- 可调参数 --------
-    const FIRST_CARD_DELAY    = 1000; // 首屏：图片先独占 2000ms
-    const CHAPTER_CARD_DELAY  = 1000;  // 后续切章：图片先独占 900ms
-    const BETWEEN_CHAPTER_PAUSE = 0; // 切换文本与标题的小停顿（越小越利落）
+    const FIRST_CARD_DELAY       = 1000; // 首屏：图片先独占
+    const CHAPTER_CARD_DELAY     = 1000; // 其后：图片先独占
+    const BETWEEN_CHAPTER_PAUSE  = 0;    // 切换文本与标题的小停顿
 
     // -------- 数据 --------
-    const chapters = [
+ const chapters = [
       {
         idx: 1,
         title: 'Chapitre I : Le Rêve fractal',
@@ -267,6 +285,7 @@
     // -------- 状态 / 元素 --------
     let i = 0;
     let firstRender = true;
+    let renderSeq = 0; // ★ 并发保护序号
     const bg = document.getElementById('bg');
     const card = document.getElementById('card');
     const titleEl = document.getElementById('chapter-title');
@@ -289,62 +308,76 @@
       [...sideList.children].forEach((el,k)=>{ el.classList.toggle('active', k===i); });
     }
 
-    // 背景图加载（带候选与空格兼容）
+    // ★ Promise 化的背景设置：依次尝试候选，加载成功后才 resolve
     function setBackgroundWithFallback(candidates){
-      if(!candidates || !candidates.length){ bg.style.backgroundImage = 'none'; return; }
-      const img = new Image();
-      let p = 0;
-      const tryNext = ()=>{
-        if(p>=candidates.length){ bg.style.backgroundImage = 'none'; return; }
-        const src = candidates[p++];
-        img.onload = ()=>{ bg.style.backgroundImage = `url('${encodeURI(src)}')`; };
-        img.onerror = tryNext;
-        img.src = src;
-      };
-      tryNext();
+      return new Promise((resolve)=>{
+        if(!candidates || !candidates.length){ bg.style.backgroundImage = 'none'; resolve(null); return; }
+        const img = new Image();
+        let p = 0;
+        const tryNext = ()=>{
+          if(p>=candidates.length){ bg.style.backgroundImage = 'none'; resolve(null); return; }
+          const src = candidates[p++];
+          img.onload = ()=>{ bg.style.backgroundImage = `url('${encodeURI(src)}')`; resolve(src); };
+          img.onerror = tryNext;
+          img.src = src;
+        };
+        tryNext();
+      });
     }
 
-    // 预加载下一章第一张图
+    // 预加载下一章第一张图（不阻塞）
     function preloadNext(idx){
       const n = chapters[(idx+1)%chapters.length];
       if(!n) return;
-      const img = new Image();
       const src = (n.imageCandidates||[])[0];
-      if(src) img.src = src;
+      if(!src) return;
+      const img = new Image();
+      img.src = src;
     }
 
-    function render(){
-      // 隐藏卡片（文字容器）
-      card.classList.remove('show');
+    const sleep = ms => new Promise(r=>setTimeout(r, ms));
 
-      // （可选）轻微让背景有个律动
-      bg.classList.remove('bump');
-      void bg.offsetWidth; // 触发重排以重启动画
-      bg.classList.add('bump');
+    // ★ 渲染流程：等待图片加载 → 等待独占展示时间 → 文本卡片淡入
+    async function render(){
+      const seq = ++renderSeq;          // 捕获当前渲染序号
+      card.classList.remove('show');    // 隐藏文字卡片
 
-      // 更新内容（立即切图，让图片先出现）
-      setTimeout(()=>{
-        const c = chapters[i];
-        titleEl.innerText = c.title;
-        textEl.innerHTML = c.text;
-        textEl.scrollTop = 0;
-        bar.style.width = ((i+1)/chapters.length*100).toFixed(1)+'%';
-        setBackgroundWithFallback(c.imageCandidates);
-        setActiveInSidebar();
-        preloadNext(i);
+      const c = chapters[i];
 
-        // 按首屏/后续选择不同的图片独占时间
-        const delay = firstRender ? FIRST_CARD_DELAY : CHAPTER_CARD_DELAY;
+      // 背景轻微律动重置
+      bg.classList.remove('bump'); void bg.offsetWidth; bg.classList.add('bump');
 
-        setTimeout(()=>{
-          card.classList.add('show');            // 显示卡片与文字
-          if (firstRender){
-            document.body.classList.add('ui-ready'); // 同步叠加层和菜单
-            firstRender = false;
-          }
-        }, delay);
+      // 先更新进度与侧栏高亮
+      bar.style.width = ((i+1)/chapters.length*100).toFixed(1)+'%';
+      setActiveInSidebar();
 
-      }, BETWEEN_CHAPTER_PAUSE);
+      // 背景加载完成才继续
+      await setBackgroundWithFallback(c.imageCandidates);
+      if(seq !== renderSeq) return; // 若期间又触发了新渲染，则放弃本次
+
+      // 等待“图片独占时间”
+      const delay = firstRender ? FIRST_CARD_DELAY : CHAPTER_CARD_DELAY;
+      await sleep(delay);
+      if(seq !== renderSeq) return;
+
+      // 更新标题与文本（此时卡片仍隐藏，随后淡入）
+      titleEl.innerText = c.title;
+      textEl.innerHTML = c.text;
+      textEl.scrollTop = 0;
+
+      // 小停顿（可选）
+      await sleep(BETWEEN_CHAPTER_PAUSE);
+      if(seq !== renderSeq) return;
+
+      // 显示卡片与UI
+      card.classList.add('show');
+      if (firstRender){
+        document.body.classList.add('ui-ready');
+        firstRender = false;
+      }
+
+      // 预加载下一章
+      preloadNext(i);
     }
 
     function goTo(idx){ i = ((idx%chapters.length)+chapters.length)%chapters.length; render(); }
@@ -353,7 +386,7 @@
 
     // 交互
     document.addEventListener('click', (e)=>{
-      if(!e.target.closest('.card, .sidebar, .menu-button')) next();   // 点击空白切章
+      if(!e.target.closest('.card, .sidebar, .menu-button, .home-link')) next(); // 点击空白切章
     });
     document.addEventListener('keydown', (e)=>{
       if(e.key==='ArrowRight' || e.key===' ') next();
