@@ -9,22 +9,22 @@
     :root{
       --bg:#0a0b0f;
       --panel: rgba(16,18,24,.6);
-      --border: rgba(255,255,255,.08);
+      --border: rgba(255,255,255,0);   /* 去边框 */
       --text:#e6e9ef;
       --muted:#9aa0a6;
       --maxw:1100px;
-      --radius:20px;
-      --shadow:0 10px 40px rgba(0,0,0,.45);
+      --radius:0px;                    /* 去倒角 */
+      --shadow:none;                   /* 去阴影 */
     }
     *{margin:0;padding:0;box-sizing:border-box;}
     html,body{height:100%;background:var(--bg);color:var(--text);font-family:Verdana,Arial,sans-serif;}
     img,video{max-width:100%;display:block;}
     a{text-decoration:none;color:inherit;}
 
-    /* —— 标题（素雅，白字） —— */
+    /* —— 标题 —— */
     .hero{
       position:relative;
-      height:10vh;               /* 按你原始短英雄区高度 */
+      height:10vh;
       display:flex;
       align-items:center;
       max-width:var(--maxw);
@@ -33,12 +33,12 @@
       text-align:left;
     }
     .hero h1{
-      color:#fff;                /* 纯白，不做美化 */
+      color:#fff;
       font-size:2em;
       font-weight:700;
     }
 
-    /* —— 内容卡片美化（保留毛玻璃/阴影/边框等） —— */
+    /* —— 内容容器 —— */
     .main{
       width:min(var(--maxw),92vw);
       margin:40px auto 80px;
@@ -48,9 +48,9 @@
       position:relative;
       margin:32px 0 56px;
       background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+      border:none;                     /* 去边框 */
+      border-radius:var(--radius);     /* 0 */
+      box-shadow:var(--shadow);        /* none */
       backdrop-filter:blur(10px);
       overflow:hidden;
     }
@@ -58,8 +58,8 @@
     .section h2{
       font-size:1.5em;
       margin-bottom:12px;
-      border-bottom:1px solid var(--border);
-      padding-bottom:6px;
+      border-bottom:none;              /* 去分割线 */
+      padding-bottom:0;
     }
     .section p{
       font-size:1em;
@@ -68,20 +68,20 @@
       color:var(--text);
     }
 
-    /* 媒体容器（简洁，固定比例） */
+    /* 媒体容器（无边框） */
     .media{
       position:relative;
       aspect-ratio:16/9;
       background:rgba(255,255,255,.04);
-      border-top:1px solid var(--border);
-      border-bottom:1px solid var(--border);
+      border-top:none;                 /* 去边框 */
+      border-bottom:none;              /* 去边框 */
       overflow:hidden;
     }
     .media img,.media video,.media iframe{
       position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
     }
 
-    /* —— 右侧菜单（你的最初版本，保持不变） —— */
+    /* —— 右侧菜单（保持原样，无边框阴影） —— */
     .menu-button{
       position:absolute;
       top:40px;
@@ -118,7 +118,7 @@
     .menu-button.hide{display:none;}
     .sidebar-menu.active{right:0;}
 
-    /* —— 内容滚动淡入（只作用内容，不影响标题/菜单） —— */
+    /* —— 内容滚动淡入 —— */
     [data-animate]{opacity:0; transform:translateY(12px); transition:opacity .6s ease, transform .8s cubic-bezier(.2,.8,.2,1);}
     [data-animate].in{opacity:1; transform:translateY(0);}
 
@@ -137,7 +137,7 @@
   </style>
 </head>
 <body>
-  <!-- 菜单（原始版本） -->
+  <!-- 菜单 -->
   <button class="menu-button" id="menuButton" onclick="toggleMenu(event)"></button>
   <div class="sidebar-menu" id="sidebarMenu">
     <a href="index.html">In Vitro</a>
@@ -149,17 +149,16 @@
     <a href="biography.html">Biography</a>
   </div>
 
-  <!-- 标题（素雅） -->
+  <!-- 标题 -->
   <section class="hero">
     <h1>Temporary Soul &amp; &Lambda;-7</h1>
   </section>
 
-  <!-- 内容（保持美化） -->
+  <!-- 内容 -->
   <main class="main">
     <!-- Overview -->
     <section class="section" id="overview" data-animate>
       <div class="media" aria-hidden="true">
-        <!-- 相对路径：请将图片放到 imgs/temporary-soul/overview.jpg -->
         <img src="imgs/temporary-soul/overview.jpg" alt="Project Image">
       </div>
       <div class="sec-inner">
@@ -181,7 +180,6 @@
         </p>
       </div>
       <div class="media">
-        <!-- 相对路径：请将视频放到 videos/TemporarySoul_web003.mp4 -->
         <video controls autoplay loop muted playsinline preload="metadata" aria-label="Temporary Soul gameplay">
           <source src="videos/TemporarySoul_web003.mp4" type="video/mp4">
         </video>
@@ -197,7 +195,6 @@
         </p>
       </div>
       <div class="media" aria-hidden="true">
-        <!-- 相对路径：请将图片放到 imgs/temporary-soul/robot.jpg -->
         <img src="imgs/temporary-soul/robot.jpg" alt="Robot Image">
       </div>
     </section>
@@ -213,7 +210,7 @@
   </main>
 
   <script>
-    // —— 菜单（保持你的原逻辑） ——
+    // —— 菜单 —— 
     function toggleMenu(event) {
       if (event) event.stopPropagation();
       var sidebarMenu = document.getElementById('sidebarMenu');
@@ -230,7 +227,7 @@
       }
     });
 
-    // —— 内容滚动淡入 ——
+    // —— 内容滚动淡入 —— 
     const items = document.querySelectorAll('[data-animate]');
     const io = new IntersectionObserver((entries)=>{
       entries.forEach(entry=>{

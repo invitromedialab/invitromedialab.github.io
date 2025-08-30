@@ -12,16 +12,16 @@
   body, html {
     height: 100%;
     font-family: 'Verdana Pro Regular', Verdana, sans-serif;
-    background-color: #111215; /* 原#000 -> 更浅的深灰 */
+    background-color: #111215; /* 深灰背景 */
     color: #fff;
   }
 
-  /* —— 右上角菜单按钮（保持参考版） —— */
+  /* —— 右上角菜单按钮 —— */
   .menu-button {
     position: absolute;
     top: 40px;
     right: 40px;
-    z-index: 1000;
+    z-index: 1100; /* 压过侧栏 */
     cursor: pointer;
     background-color: transparent;
     border: none;
@@ -34,48 +34,64 @@
   }
   .menu-button.hide { display: none; }
 
-  /* —— 右侧菜单（参考版结构） —— */
+  /* —— 右侧菜单 —— */
   .sidebar-menu {
     position: fixed;
     top: 8%;
     right: -20%;
-    width: 15%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 50px;
-    transition: right 0.5s;
+    width: 18%;                    /* 稍微宽一点 */
+    height: 92%;
+    padding: 28px 22px;
     box-sizing: border-box;
-    color: #808080; 
-    text-align: center;
-    z-index: 1;
+    z-index: 1000;
+
+    /* 半透明 + 毛玻璃效果 */
+    background: rgba(17, 18, 21, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    transition: right 0.5s;
+    color: #aeb4ba;
+    text-align: left; /* 左对齐 */
+    border-left: 1px solid rgba(255,255,255,0.06);
   }
-  .sidebar-menu a, .sidebar-menu div {
-    color: white; 
-    text-decoration: none;
+
+  .sidebar-menu a,
+  .sidebar-menu div {
     display: block;
-    margin-bottom: 10px;
-    font-size: 13px; /* 原10px -> 放大 */
-    line-height: 1.4;
+    text-decoration: none;
+    color: #eef2f6;
+    margin: 4px 0;
+    font-size: 15px; /* 字大一点 */
+    line-height: 1.5;
   }
-  .sidebar-menu div.space { height: 20px; }
+
+  .sidebar-menu a {
+    padding: 10px 12px; /* 像按钮 */
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .sidebar-menu div.space { height: 14px; }
+
   .sidebar-menu.active { right: 0; }
 
-  /* 悬停与选中：只做背景高亮，不要白色框框*/
+  /* 悬停/选中：背景高亮 */
   .sidebar-menu a:hover {
-    background: rgba(255,255,255,0.08);
-
+    background: rgba(255,255,255,0.10);
   }
   .sidebar-menu a.active {
-    background: rgba(255,255,255,0.16);
-
+    background: rgba(255,255,255,0.18);
   }
 
-  @media (max-width: 768px) {
-    .sidebar-menu { width: 50%; right: -50%; }
-    .sidebar-menu a, .sidebar-menu div { font-size: 11px; } /* 原8px -> 放大 */
+  /* 去掉默认 focus 白色框 */
+  .sidebar-menu a:focus,
+  .sidebar-menu a:focus-visible {
+    outline: none;
+    box-shadow: none;
   }
 
-  /* —— 正文（素），两端对齐 —— */
+  /* —— 正文 —— */
   main {
     max-width: 880px;
     width: 92vw;
@@ -95,7 +111,7 @@
     color: #fff;
   }
 
-  /* 两端对齐 + 更平滑的断词 */
+  /* 两端对齐 + 更平滑断词 */
   p, .entry {
     text-align: justify;
     text-justify: inter-word;
@@ -113,7 +129,6 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-
   }
   .btn {
     display: inline-flex;
@@ -125,14 +140,22 @@
     background: rgba(255,255,255,0.08);
     text-decoration: none;
     transition: background .2s ease, border-color .2s ease, transform .12s ease;
-    border-radius: 10px
+    border-radius: 10px;
   }
   .btn:hover {
     background: rgba(255,255,255,0.12);
     border-color: rgba(255,255,255,0.28);
     transform: translateY(-1px);
   }
+
+  /* —— 移动端 —— */
+  @media (max-width: 768px) {
+    .sidebar-menu { width: 60%; right: -60%; padding: 24px 18px; }
+    .sidebar-menu a, .sidebar-menu div { font-size: 14px; }
+    .sidebar-menu a { padding: 9px 11px; }
+  }
 </style>
+
 </head>
 <body>
 
