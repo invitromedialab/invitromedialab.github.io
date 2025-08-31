@@ -140,6 +140,76 @@ async function startAudioOnGesture(){
   window.addEventListener('touchstart', once, {once:true});
 })();
 
+/* ========= ★ 新增：菜单点击时 1s 渐出后再跳转 ========= */
+const NAV_FADE_OUT_MS = 1000;
+
+function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
+  // 找到最近的 <a>（兼容嵌套元素）
+  function findAnchor(el){
+    while(el && el !== document){
+      if(el.tagName === 'A' && el.href) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented) return;
+    if (e.button !== 0) return;                       // 仅左键
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // 有修饰键则放行（新标签等）
+    const a = findAnchor(e.target);
+    if(!a) return;
+
+    const href = a.getAttribute('href');
+    if(!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+    if(a.target && a.target !== '' && a.target !== '_self') return; // 新窗口不拦截
+
+    // 不是站内跳转也可以淡出，但常见做法是只处理同源
+    // const url = new URL(a.href, location.href);
+    // if (url.origin !== location.origin) return;
+
+    // 如果音频未启动，直接跳转，不延迟
+    if(!started || !gainNode || !audioCtx){
+      return; // 不阻止默认，继续正常跳转
+    }
+
+    // 有音频时：阻止默认 → 渐出 → 再跳转
+    e.preventDefault();
+    try{
+      const now = audioCtx.currentTime;
+      const dur = Math.max(ms, 0) / 1000;
+      const cur = gainNode.gain.value;
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(cur, now);
+      gainNode.gain.linearRampToValueAtTime(0.0, now + dur);
+    }catch(_){ /* 忽略音频节点异常 */ }
+
+    setTimeout(() => { window.location.href = a.href; }, ms);
+  }, true); // 捕获阶段，尽量先于其它处理执行
+}
+
+// 提供可编程调用的 API：window.fadeOutAudioThen(url, ms)
+window.fadeOutAudioThen = function(nextHref, ms = NAV_FADE_OUT_MS){
+  if(!nextHref){ return; }
+  if(!started || !gainNode || !audioCtx){
+    window.location.href = nextHref;
+    return;
+  }
+  const now = audioCtx.currentTime;
+  const dur = Math.max(ms, 0)/1000;
+  const cur = gainNode.gain.value;
+  try{
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(cur, now);
+    gainNode.gain.linearRampToValueAtTime(0.0, now + dur);
+  }catch(_){}
+  setTimeout(()=>{ window.location.href = nextHref; }, ms);
+};
+
+installNavAudioFadeOut();
+</script>
+
+<script>
 function updateAudioLevel(){
   if(!analyser || !freqData) return audioLevel;
   analyser.getByteFrequencyData(freqData);
@@ -201,7 +271,7 @@ function initWebGL(){
     vTextureCoord=aVertexPosition.xy+.5;
   }`;
 
-  /* === 保持你“最早版本”的片元着色器逻辑，仅新增一行 uniform float uAudio; === */
+  /* === 片元着色器：保持你给出的版本（仅声明 uAudio 已存在于此版本） === */
   const fragmentShaderSource=`#version 300 es
   precision mediump float;
   in vec4 aVertexPosition;
@@ -213,7 +283,7 @@ function initWebGL(){
   uniform sampler2D uTexture1;
   uniform sampler2D uTexture2;
   uniform float uFade;
-  uniform float uAudio;   // ★ 仅声明；
+  uniform float uAudio;
 
   float f(vec3 p){
     p.z+=uTime/10.0;
@@ -230,9 +300,7 @@ function initWebGL(){
     vec3 o=d*audioBoost;
     for(int i=0;i<15;i++){ o-=f(o)*d*0.45*uFade; }
     vec4 c=vec4(0.6+Fade*3.,1.0,1.4-Fade,1.0);
-    
     c=abs(f(o-d)*c+f(o-0.4)*(vec4(2.0,2.2,2.3,1.)-c))*(1.-.3*o.z)*0.3;
-    // ★ 给颜色一点“听感”偏移
     c.rgb += vec3(0.27, -0.14, 0.22) * uAudio;
     fragColor=vec4(c.xyz*uFade,1.0);
   }`;
@@ -245,7 +313,7 @@ function initWebGL(){
   uResolutionLocation=gl.getUniformLocation(shaderProgram,'u_resolution');
   uMouseLocation=gl.getUniformLocation(shaderProgram,'uMouse');
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
-  uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio'); // 可能为 null（被优化），下面有保护
+  uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio'); // 可能为 null（被优化）
 
   uTexture1Location=gl.getUniformLocation(shaderProgram,'uTexture1');
   uTexture2Location=gl.getUniformLocation(shaderProgram,'uTexture2');
@@ -314,7 +382,7 @@ function render(now){
   gl.uniform1f(uTimeLocation,now);
   gl.uniform2f(uMouseLocation,mousePos.x,mousePos.y);
   gl.uniform1f(uFadeLocation, window.Fade?.value ?? 1.0);
-  if(uAudioLocation) gl.uniform1f(uAudioLocation, level); // ★ 仅在存在时传值
+  if(uAudioLocation) gl.uniform1f(uAudioLocation, level);
 
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture1); gl.uniform1i(uTexture1Location,0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texture2); gl.uniform1i(uTexture2Location,1);
