@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>In Vitro</title>
-  <link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png">
+  <link rel="icon" href="imgs/00320-4177656063.png?raw=true" type="image/png">
   <link rel="stylesheet" href="assets/css/main.css">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -325,8 +325,7 @@ function initWebGL(){
   uniform vec2 uMouse;
   uniform float uTime;
   uniform vec2 u_resolution;
-  uniform sampler2D uTexture1;
-  uniform sampler2D uTexture2;
+
   uniform float uFade;
   uniform float uAudio;
 
@@ -359,15 +358,13 @@ function initWebGL(){
   uMouseLocation=gl.getUniformLocation(shaderProgram,'uMouse');
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
   uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio');
-  uTexture1Location=gl.getUniformLocation(shaderProgram,'uTexture1');
-  uTexture2Location=gl.getUniformLocation(shaderProgram,'uTexture2');
+
 
   positionBuffer=gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([1,1,-1,1,1,-1,-1,-1]),gl.STATIC_DRAW);
 
-  texture1=loadTexture('texture/1.jpg',gl.TEXTURE0);
-  texture2=loadTexture('texture/2.png',gl.TEXTURE1);
+
 
   requestAnimationFrame(render);
 }
