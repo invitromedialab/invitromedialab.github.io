@@ -178,7 +178,7 @@ function playViaBufferSync() {
   const onFirstTap = async (ev) => {
     // 抢先处理，避免被其它监听截胡
     ev.preventDefault();
-    ev.stopPropagation();
+    // ev.stopPropagation(); // 去掉，避免阻断后续监听
 
     if (started) { gate.remove(); return; }
     started = true;
@@ -294,13 +294,35 @@ AUDIO.addEventListener('ended', () => {
   decay();
 });
 
-/* 输入 */
+/* ====== 全局指针跟踪（capture 阶段；tapgate 在时也能拿到） ====== */
 const onPointerMove = (x,y,rect) => {
   mousePos.x = x - rect.left;
   mousePos.y = rect.height - (y - rect.top);
 };
-canvas.addEventListener('mousemove',(e)=>onPointerMove(e.clientX,e.clientY,canvas.getBoundingClientRect()));
-canvas.addEventListener('touchmove',(ev)=>{ ev.preventDefault(); if(ev.touches.length){ const t=ev.touches[0]; onPointerMove(t.clientX,t.clientY,canvas.getBoundingClientRect()); } },{passive:false});
+(function bindGlobalPointerTracking(){
+  const move = (e) => {
+    const t = (e.touches && e.touches[0]) ? e.touches[0] : e;
+    const rect = canvas.getBoundingClientRect();
+    onPointerMove(t.clientX, t.clientY, rect);
+  };
+  const opts = { passive: false, capture: true };
+
+  // document 兜底
+  document.addEventListener('pointermove', move, opts);
+  document.addEventListener('touchmove',   move, opts);
+
+  // tapgate 存在时也监听它
+  const gate = document.getElementById('tapgate');
+  if (gate) {
+    gate.addEventListener('pointermove', move, opts);
+    gate.addEventListener('touchmove',   move, opts);
+  }
+
+  // 仍保留在 canvas 上（非必需，但不会冲突）
+  canvas.addEventListener('pointermove', move, opts);
+  canvas.addEventListener('touchmove',   move, opts);
+})();
+
 window.addEventListener('resize',()=>resizeCanvas(),false);
 </script>
 
@@ -359,12 +381,13 @@ function initWebGL(){
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
   uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio');
 
+  // 如果你后续添加纹理采样，这里再获取对应 uniform；目前 shader 未声明采样器
+  uTexture1Location = gl.getUniformLocation(shaderProgram, 'uTex1');
+  uTexture2Location = gl.getUniformLocation(shaderProgram, 'uTex2');
 
   positionBuffer=gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([1,1,-1,1,1,-1,-1,-1]),gl.STATIC_DRAW);
-
-
 
   requestAnimationFrame(render);
 }
@@ -410,8 +433,9 @@ function render(now){
   gl.uniform1f(uFadeLocation, window.Fade?.value ?? 1.0);
   if(uAudioLocation) gl.uniform1f(uAudioLocation, level);
 
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture1); gl.uniform1i(uTexture1Location,0);
-  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texture2); gl.uniform1i(uTexture2Location,1);
+  // 只有在真实声明并绑定了采样器时才设置，防止报错
+  if (uTexture1Location && texture1){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture1); gl.uniform1i(uTexture1Location,0); }
+  if (uTexture2Location && texture2){ gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texture2); gl.uniform1i(uTexture2Location,1); }
 
   gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -420,8 +444,13 @@ function render(now){
   requestAnimationFrame(render);
 }
 function resizeCanvas(){
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
+  const dpr = Math.min(2, window.devicePixelRatio || 1); // 适度限制 dpr
+  const w = Math.floor(window.innerWidth  * dpr);
+  const h = Math.floor(window.innerHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h){
+    canvas.width = w;
+    canvas.height = h;
+  }
   if(gl) gl.viewport(0,0,canvas.width,canvas.height);
 }
 window.addEventListener('load', ()=>{ resizeCanvas(); initWebGL(); }, {once:true});
