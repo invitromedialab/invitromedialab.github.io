@@ -13,13 +13,18 @@
     #glCanvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
     .work-image,.work-video{display:none!important}
     audio#bgm{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+    /* 首击透明接手层 */
+    #tapgate{position:fixed;inset:0;z-index:999999;background:transparent;cursor:pointer}
   </style>
 </head>
 <body>
 
+<!-- 首次点击接手层：确保首击动作被我们捕获 -->
+<div id="tapgate" aria-label="tap-to-start"></div>
+
 <canvas id="glCanvas"></canvas>
 
-<!-- 改回 MP3 音源（推荐），注意放置到 sounds/sound1.mp3 -->
+<!-- MP3 音源：推荐同域；跨域需 CORS -->
 <audio id="bgm" src="sounds/sound1.mp3" preload="auto" crossorigin="anonymous"></audio>
 
 <!-- 隐藏占位：给 main.js 初始化菜单 -->
@@ -34,7 +39,7 @@
 }
 </script>
 
-<!-- ===== 画面淡入/淡出控制 ===== -->
+<!-- ===== 全局画面淡入/淡出控制 ===== -->
 <script>
 (() => {
   let value=0, rafId=null, anim=null;
@@ -71,78 +76,149 @@
 })();
 </script>
 
-<!-- ===== 音频（首击播放+淡入）与 WebGL ===== -->
+<!-- ===== 音频首击必响 + 兜底、导航淡出、频谱 ===== -->
 <script>
+/* ===== 全局状态 ===== */
 let gl, shaderProgram, positionBuffer;
 let uTimeLocation, uResolutionLocation, uMouseLocation, uFadeLocation, uAudioLocation;
 let texture1, texture2, uTexture1Location, uTexture2Location;
 let mousePos={x:0,y:0};
-let canvas=document.getElementById('glCanvas');
+const canvas=document.getElementById('glCanvas');
 
-/* ========= 音频播放首击解锁 ========= */
+/* ===== 音频对象 ===== */
 const AUDIO = document.getElementById('bgm');
-let audioCtx=null, analyser=null, freqData=null, audioLevel=0;
-let mediaSourceNode=null, gainNode=null;
-let wired=false, started=false;
+let audioCtx=null, analyser=null, gainNode=null, mediaSourceNode=null, freqData=null;
+let wired=false, started=false, usingBufferFallback=false;
+let bufferNode=null, decodedBuffer=null;
 
-/* 可选：静音自动预热（失败也无所谓） */
+/* 可选：静音预热（不依赖，失败无碍） */
 (async () => {
   try { AUDIO.muted = true; await AUDIO.play(); AUDIO.pause(); AUDIO.currentTime=0; } catch(_) {}
 })();
 
-async function startAudioOnGesture(){
-  if(started) return; started = true;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-    if(!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(AUDIO);
-    if(!gainNode){ gainNode = audioCtx.createGain(); gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime); }
-    if(!analyser){
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.85;
-      freqData = new Uint8Array(analyser.frequencyBinCount);
-    }
-    if(!wired){
-      mediaSourceNode.connect(gainNode);
-      gainNode.connect(analyser);
-      gainNode.connect(audioCtx.destination);
-      wired = true;
-    }
-
-    AUDIO.muted = false;  // 关键：取消静音必须在手势里
-    AUDIO.loop = false;   // 需要循环请改为 true
-    AUDIO.volume = 1.0;
-    try { AUDIO.currentTime = 0; } catch(_){}
-    await AUDIO.play();   // 关键：手势回调内调用
-
-    const now = audioCtx.currentTime;
-    gainNode.gain.cancelScheduledValues(now);
-    gainNode.gain.setValueAtTime(0.0, now);
-    gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0); // 1s 渐入
-  }catch(e){
-    console.warn('Start audio failed:', e);
-    started = false; // 失败，允许再次尝试
-  }
+/* 兜底：提前一次 decode（仅在首击里触发） */
+async function decodeOnceToBuffer() {
+  if (decodedBuffer) return decodedBuffer;
+  const res = await fetch(AUDIO.src, { mode: 'cors', cache: 'force-cache' });
+  const arr = await res.arrayBuffer();
+  decodedBuffer = await (audioCtx || new (window.AudioContext||window.webkitAudioContext)()).decodeAudioData(arr);
+  return decodedBuffer;
 }
 
-/* 一次性手势绑定（点击/按键/触摸） */
-(function bindOneTimeGesture(){
-  const once = async () => {
-    await startAudioOnGesture();
-    window.removeEventListener('pointerdown', once);
-    window.removeEventListener('keydown', once);
-    window.removeEventListener('touchstart', once);
-    window.removeEventListener('touchend', once);
+/* 路径1：元素直接播放（同步，不 await） */
+function playViaElementSync() {
+  if (!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(AUDIO);
+  if (!gainNode) {
+    gainNode = audioCtx.createGain();
+    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
+  }
+  if (!analyser) {
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.85;
+    freqData = new Uint8Array(analyser.frequencyBinCount);
+  }
+  if (!wired) {
+    mediaSourceNode.connect(gainNode);
+    gainNode.connect(analyser);
+    gainNode.connect(audioCtx.destination);
+    wired = true;
+  }
+  AUDIO.muted = false;
+  AUDIO.loop  = false; // 需要循环可设 true
+  AUDIO.volume = 1.0;
+  try { AUDIO.currentTime = 0; } catch(_) {}
+
+  const p = AUDIO.play(); // 不 await，保持手势调用栈“纯净”
+  if (p && typeof p.catch === 'function') p.catch(()=>{});
+
+  const now = audioCtx.currentTime;
+  gainNode.gain.cancelScheduledValues(now);
+  gainNode.gain.setValueAtTime(0.0, now);
+  gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
+}
+
+/* 路径2：WebAudio Buffer 兜底（手势中 decode + 播放） */
+function playViaBufferSync() {
+  usingBufferFallback = true;
+  if (!gainNode) {
+    gainNode = audioCtx.createGain();
+    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
+  }
+  if (!analyser) {
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.85;
+    freqData = new Uint8Array(analyser.frequencyBinCount);
+  }
+  gainNode.connect(analyser);
+  gainNode.connect(audioCtx.destination);
+
+  if (bufferNode) {
+    try { bufferNode.stop(); } catch(_) {}
+    bufferNode.disconnect();
+    bufferNode = null;
+  }
+  bufferNode = audioCtx.createBufferSource();
+  bufferNode.buffer = decodedBuffer;
+  bufferNode.loop = false; // 需要循环可设 true
+  bufferNode.connect(gainNode);
+  bufferNode.start();
+
+  const now = audioCtx.currentTime;
+  gainNode.gain.cancelScheduledValues(now);
+  gainNode.gain.setValueAtTime(0.0, now);
+  gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
+}
+
+/* 首击接手：强占第一次用户手势，保证同步链路 */
+(function installFirstTapGate(){
+  const gate = document.getElementById('tapgate');
+
+  const onFirstTap = async (ev) => {
+    // 抢先处理，避免被其它监听截胡
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    if (started) { gate.remove(); return; }
+    started = true;
+
+    try{
+      // 创建/恢复 AudioContext（手势中）
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume(); // 允许 await，仍在手势回调中
+      }
+
+      try {
+        // 1) 先试元素直接播放（省内存）
+        playViaElementSync();
+      } catch (_) {
+        // 2) 兜底：decode + Buffer 播放（同一手势内完成）
+        try {
+          await decodeOnceToBuffer();
+          playViaBufferSync();
+        } catch (e2) {
+          console.warn('Buffer fallback failed:', e2);
+          started = false; // 允许再次尝试
+        }
+      }
+    } catch (e) {
+      console.warn('Audio unlock failed:', e);
+      started = false; // 允许再次尝试
+    } finally {
+      // 移除透明接手层
+      gate.remove();
+    }
   };
-  window.addEventListener('pointerdown', once, {once:true});
-  window.addEventListener('keydown', once, {once:true});
-  window.addEventListener('touchstart', once, {once:true, passive:true});
-  window.addEventListener('touchend', once, {once:true, passive:true}); // iOS 更稳
+
+  // 多重保险：pointerdown / touchend / keydown
+  gate.addEventListener('pointerdown', onFirstTap, { once:true });
+  gate.addEventListener('touchend',   onFirstTap, { once:true, passive:false });
+  window.addEventListener('keydown',  onFirstTap, { once:true });
 })();
 
-/* ========= 导航时同步淡出音频+画面 ========= */
+/* 导航时：画面+音频 同步淡出后再跳转 */
 const NAV_FADE_OUT_MS = 1000;
 function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
   function findAnchor(el){
@@ -169,7 +245,7 @@ function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
 
     try { window.Fade?.fadeOut(ms); } catch(_) {}
 
-    if (started && gainNode && audioCtx){
+    if (gainNode && audioCtx){
       try{
         const now = audioCtx.currentTime;
         gainNode.gain.cancelScheduledValues(now);
@@ -183,7 +259,7 @@ function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
 window.fadeOutAllThen = function(nextHref, ms = NAV_FADE_OUT_MS){
   if(!nextHref) return;
   try { window.Fade?.fadeOut(ms); } catch(_) {}
-  if (started && gainNode && audioCtx){
+  if (gainNode && audioCtx){
     try{
       const now = audioCtx.currentTime;
       gainNode.gain.cancelScheduledValues(now);
@@ -195,7 +271,8 @@ window.fadeOutAllThen = function(nextHref, ms = NAV_FADE_OUT_MS){
 };
 installNavAudioFadeOut();
 
-/* ========= 音频电平（供 uAudio 使用） ========= */
+/* 频谱电平（uAudio） */
+let audioLevel = 0;
 function updateAudioLevel(){
   if(!analyser || !freqData) return audioLevel;
   analyser.getByteFrequencyData(freqData);
@@ -217,7 +294,7 @@ AUDIO.addEventListener('ended', () => {
   decay();
 });
 
-/* ========= 输入 ========= */
+/* 输入 */
 const onPointerMove = (x,y,rect) => {
   mousePos.x = x - rect.left;
   mousePos.y = rect.height - (y - rect.top);
@@ -225,12 +302,15 @@ const onPointerMove = (x,y,rect) => {
 canvas.addEventListener('mousemove',(e)=>onPointerMove(e.clientX,e.clientY,canvas.getBoundingClientRect()));
 canvas.addEventListener('touchmove',(ev)=>{ ev.preventDefault(); if(ev.touches.length){ const t=ev.touches[0]; onPointerMove(t.clientX,t.clientY,canvas.getBoundingClientRect()); } },{passive:false});
 window.addEventListener('resize',()=>resizeCanvas(),false);
+</script>
 
-/* ========= WebGL（保持你的着色器逻辑） ========= */
+<!-- ===== WebGL（保持你的着色器逻辑） ===== -->
+<script>
 function initWebGL(){
-  gl=canvas.getContext('webgl2');
+  const gl2 = canvas.getContext('webgl2');
+  if(!gl2){ alert('WebGL2 不支持'); return; }
+  gl = gl2;
   resizeCanvas();
-  if(!gl){ alert('WebGL2 不支持'); return; }
 
   const vertexShaderSource=`#version 300 es
   in vec4 aVertexPosition;
@@ -351,7 +431,7 @@ window.addEventListener('load', ()=>{ resizeCanvas(); initWebGL(); }, {once:true
 window.addEventListener('resize', resizeCanvas);
 </script>
 
-<!-- 注入菜单 -->
+<!-- 注入菜单（如果有站内导航） -->
 <script src="assets/js/main.js" defer></script>
 </body>
 </html>
