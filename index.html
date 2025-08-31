@@ -1,30 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>document.documentElement.classList.add('ivt-preboot');</script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>In Vitro</title>
-<link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png"> 
-<link rel="stylesheet" href="assets/css/main.css">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; overflow: hidden; font-family: 'Verdana Pro Regular', Verdana, sans-serif; }
-  #glCanvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
-  .work-image,.work-video { display: none !important; }
-  video#audioVideo { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
-</style>
+  <script>document.documentElement.classList.add('ivt-preboot');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>In Vitro</title>
+  <link rel="icon" href="https://github.com/invitromedialab/invitromedialab.github.io/blob/main/imgs/00320-4177656063.png?raw=true" type="image/png">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;overflow:hidden;font-family:'Verdana Pro Regular',Verdana,sans-serif}
+    #glCanvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+    .work-image,.work-video{display:none!important}
+    audio#bgm{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  </style>
 </head>
 <body>
 
 <canvas id="glCanvas"></canvas>
 
-<!-- 音源：MP4（点击后开始 + 1s 渐入） -->
-<video id="audioVideo"
-       src="sounds/sound1.mp4"
-       preload="auto"
-       playsinline
-       controls="false"></video>
+<!-- 改回 MP3 音源（推荐），注意放置到 sounds/sound1.mp3 -->
+<audio id="bgm" src="sounds/sound1.mp3" preload="auto" crossorigin="anonymous"></audio>
 
 <!-- 隐藏占位：给 main.js 初始化菜单 -->
 <video class="work-video" muted playsinline></video>
@@ -34,14 +30,12 @@
 {
   "startIndex": 0,
   "transitionMs": 500,
-  "media": [
-    { "type": "image", "src": "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" }
-  ]
+  "media": [{ "type": "image", "src": "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" }]
 }
 </script>
 
+<!-- ===== 画面淡入/淡出控制 ===== -->
 <script>
-/* ===== 渐入/渐出控制器，暴露 window.Fade ===== */
 (() => {
   let value=0, rafId=null, anim=null;
   const listeners=new Set();
@@ -52,7 +46,7 @@
     window.FADE_PROGRESS=value;
   }
   function tick(t){
-    if(!anim)return;
+    if(!anim) return;
     const {start,duration,from,to}=anim;
     const k=duration>0?Math.min(1,(t-start)/duration):1;
     const eased=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
@@ -61,7 +55,7 @@
     rafId=requestAnimationFrame(tick);
   }
   function animateTo(target,ms){
-    cancelAnimationFrame(rafId);anim=null;
+    cancelAnimationFrame(rafId); anim=null;
     anim={from:value,to:Math.max(0,Math.min(1,target)),duration:Math.max(0,ms|0),start:performance.now()};
     rafId=requestAnimationFrame(tick);
   }
@@ -77,31 +71,33 @@
 })();
 </script>
 
+<!-- ===== 音频（首击播放+淡入）与 WebGL ===== -->
 <script>
 let gl, shaderProgram, positionBuffer;
 let uTimeLocation, uResolutionLocation, uMouseLocation, uFadeLocation, uAudioLocation;
 let texture1, texture2, uTexture1Location, uTexture2Location;
-let mousePos={x:0,y:0}; 
+let mousePos={x:0,y:0};
 let canvas=document.getElementById('glCanvas');
 
-/* ========= 音频：点击后开始 + 1s 渐入（GainNode） ========= */
-const VIDEO = document.getElementById('audioVideo');
+/* ========= 音频播放首击解锁 ========= */
+const AUDIO = document.getElementById('bgm');
+let audioCtx=null, analyser=null, freqData=null, audioLevel=0;
+let mediaSourceNode=null, gainNode=null;
+let wired=false, started=false;
 
-let audioCtx = null, analyser = null, freqData = null, audioLevel = 0;
-let mediaSourceNode = null, gainNode = null;
-let wired = false, started = false;
+/* 可选：静音自动预热（失败也无所谓） */
+(async () => {
+  try { AUDIO.muted = true; await AUDIO.play(); AUDIO.pause(); AUDIO.currentTime=0; } catch(_) {}
+})();
 
 async function startAudioOnGesture(){
   if(started) return; started = true;
   try{
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    if(audioCtx.state === 'suspended') await audioCtx.resume();
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-    if(!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(VIDEO);
-    if(!gainNode){
-      gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime); // 渐入从 0 开始
-    }
+    if(!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(AUDIO);
+    if(!gainNode){ gainNode = audioCtx.createGain(); gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime); }
     if(!analyser){
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 1024;
@@ -115,34 +111,39 @@ async function startAudioOnGesture(){
       wired = true;
     }
 
-    VIDEO.loop = false;
-    VIDEO.muted = false;   // 手势内允许解静音
-    VIDEO.volume = 1.0;
-    try { VIDEO.currentTime = 0; } catch(_) {}
-    await VIDEO.play();
+    AUDIO.muted = false;  // 关键：取消静音必须在手势里
+    AUDIO.loop = false;   // 需要循环请改为 true
+    AUDIO.volume = 1.0;
+    try { AUDIO.currentTime = 0; } catch(_){}
+    await AUDIO.play();   // 关键：手势回调内调用
 
     const now = audioCtx.currentTime;
     gainNode.gain.cancelScheduledValues(now);
     gainNode.gain.setValueAtTime(0.0, now);
-    gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0); // 1 秒渐入
-  }catch(e){ console.warn('Start audio failed:', e); }
+    gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0); // 1s 渐入
+  }catch(e){
+    console.warn('Start audio failed:', e);
+    started = false; // 失败，允许再次尝试
+  }
 }
 
+/* 一次性手势绑定（点击/按键/触摸） */
 (function bindOneTimeGesture(){
   const once = async () => {
     await startAudioOnGesture();
     window.removeEventListener('pointerdown', once);
     window.removeEventListener('keydown', once);
     window.removeEventListener('touchstart', once);
+    window.removeEventListener('touchend', once);
   };
   window.addEventListener('pointerdown', once, {once:true});
   window.addEventListener('keydown', once, {once:true});
-  window.addEventListener('touchstart', once, {once:true});
+  window.addEventListener('touchstart', once, {once:true, passive:true});
+  window.addEventListener('touchend', once, {once:true, passive:true}); // iOS 更稳
 })();
 
-/* ========= ★ 新增：菜单点击时 音频+画面 同步渐出 → 再跳转 ========= */
+/* ========= 导航时同步淡出音频+画面 ========= */
 const NAV_FADE_OUT_MS = 1000;
-
 function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
   function findAnchor(el){
     while(el && el !== document){
@@ -151,11 +152,10 @@ function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
     }
     return null;
   }
-
   document.addEventListener('click', (e) => {
     if (e.defaultPrevented) return;
-    if (e.button !== 0) return;                                  // 仅左键
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;// 有修饰键放行
+    if (e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
     const a = findAnchor(e.target);
     if(!a) return;
@@ -163,52 +163,39 @@ function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
     const href = a.getAttribute('href');
     if(!href || href.startsWith('#') || href.startsWith('javascript:')) return;
     const tgt = a.getAttribute('target');
-    if (tgt && tgt !== '' && tgt !== '_self') return;            // 新窗口不拦截
+    if (tgt && tgt !== '' && tgt !== '_self') return;
 
-    // —— 总是拦截一次，先做“视觉淡出”
     e.preventDefault();
 
-    // ① 画面淡出（驱动 uFade）
     try { window.Fade?.fadeOut(ms); } catch(_) {}
 
-    // ② 音频淡出（若已启动）
     if (started && gainNode && audioCtx){
       try{
         const now = audioCtx.currentTime;
-        const dur = ms / 1000;
-        const cur = gainNode.gain.value;
         gainNode.gain.cancelScheduledValues(now);
-        gainNode.gain.setValueAtTime(cur, now);
-        gainNode.gain.linearRampToValueAtTime(0.0, now + dur);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+        gainNode.gain.linearRampToValueAtTime(0.0, now + ms/1000);
       }catch(_){}
     }
-
-    // ③ 延迟跳转（等待淡出完成）
     setTimeout(() => { window.location.href = a.href; }, ms);
-  }, true); // 捕获阶段
+  }, true);
 }
-
-/* 可编程调用：window.fadeOutAllThen(url, ms) */
 window.fadeOutAllThen = function(nextHref, ms = NAV_FADE_OUT_MS){
   if(!nextHref) return;
   try { window.Fade?.fadeOut(ms); } catch(_) {}
   if (started && gainNode && audioCtx){
     try{
       const now = audioCtx.currentTime;
-      const dur = ms / 1000;
-      const cur = gainNode.gain.value;
       gainNode.gain.cancelScheduledValues(now);
-      gainNode.gain.setValueAtTime(cur, now);
-      gainNode.gain.linearRampToValueAtTime(0.0, now + dur);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+      gainNode.gain.linearRampToValueAtTime(0.0, now + ms/1000);
     }catch(_){}
   }
   setTimeout(() => { window.location.href = nextHref; }, ms);
 };
-
 installNavAudioFadeOut();
-</script>
 
-<script>
+/* ========= 音频电平（供 uAudio 使用） ========= */
 function updateAudioLevel(){
   if(!analyser || !freqData) return audioLevel;
   analyser.getByteFrequencyData(freqData);
@@ -222,8 +209,7 @@ function updateAudioLevel(){
   audioLevel += (target - audioLevel) * SMOOTH;
   return audioLevel;
 }
-
-VIDEO.addEventListener('ended', () => {
+AUDIO.addEventListener('ended', () => {
   const decay = () => {
     audioLevel += (0 - audioLevel) * 0.10;
     if (audioLevel > 0.001) requestAnimationFrame(decay);
@@ -231,46 +217,26 @@ VIDEO.addEventListener('ended', () => {
   decay();
 });
 
-/* ========= 鼠标 & 触控 ========= */
-canvas.addEventListener('mousemove',(e)=>{
-  const rect=canvas.getBoundingClientRect();
-  mousePos.x=e.clientX-rect.left;
-  mousePos.y=rect.height-(e.clientY-rect.top);
-});
-canvas.addEventListener('touchmove',handleTouchMove,{passive:false});
-window.addEventListener('resize',resizeCanvas,false);
+/* ========= 输入 ========= */
+const onPointerMove = (x,y,rect) => {
+  mousePos.x = x - rect.left;
+  mousePos.y = rect.height - (y - rect.top);
+};
+canvas.addEventListener('mousemove',(e)=>onPointerMove(e.clientX,e.clientY,canvas.getBoundingClientRect()));
+canvas.addEventListener('touchmove',(ev)=>{ ev.preventDefault(); if(ev.touches.length){ const t=ev.touches[0]; onPointerMove(t.clientX,t.clientY,canvas.getBoundingClientRect()); } },{passive:false});
+window.addEventListener('resize',()=>resizeCanvas(),false);
 
-function resizeCanvas(){
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
-  if(gl) gl.viewport(0,0,canvas.width,canvas.height);
-}
-function handleTouchMove(event){
-  event.preventDefault();
-  if(event.touches.length>0){
-    const touch=event.touches[0];
-    const rect=canvas.getBoundingClientRect();
-    mousePos.x=touch.clientX-rect.left;
-    mousePos.y=rect.height-(touch.clientY-rect.top);
-  }
-}
-
-/* ========= WebGL ========= */
+/* ========= WebGL（保持你的着色器逻辑） ========= */
 function initWebGL(){
   gl=canvas.getContext('webgl2');
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
+  resizeCanvas();
   if(!gl){ alert('WebGL2 不支持'); return; }
 
   const vertexShaderSource=`#version 300 es
   in vec4 aVertexPosition;
   out highp vec2 vTextureCoord;
-  void main(){
-    gl_Position=aVertexPosition;
-    vTextureCoord=aVertexPosition.xy+.5;
-  }`;
+  void main(){ gl_Position=aVertexPosition; vTextureCoord=aVertexPosition.xy+.5; }`;
 
-  /* === 片元着色器：保持你提供的版本（含 uAudio 的使用） === */
   const fragmentShaderSource=`#version 300 es
   precision mediump float;
   in vec4 aVertexPosition;
@@ -304,50 +270,36 @@ function initWebGL(){
     fragColor=vec4(c.xyz*uFade,1.0);
   }`;
 
-  const vertexShader=createShader(gl,gl.VERTEX_SHADER,vertexShaderSource);
-  const fragmentShader=createShader(gl,gl.FRAGMENT_SHADER,fragmentShaderSource);
-  shaderProgram=createShaderProgram(gl,vertexShader,fragmentShader);
+  const vs=createShader(gl,gl.VERTEX_SHADER,vertexShaderSource);
+  const fs=createShader(gl,gl.FRAGMENT_SHADER,fragmentShaderSource);
+  shaderProgram=createShaderProgram(gl,vs,fs);
 
   uTimeLocation=gl.getUniformLocation(shaderProgram,'uTime');
   uResolutionLocation=gl.getUniformLocation(shaderProgram,'u_resolution');
   uMouseLocation=gl.getUniformLocation(shaderProgram,'uMouse');
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
-  uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio'); // 可能为 null（被优化）
-
+  uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio');
   uTexture1Location=gl.getUniformLocation(shaderProgram,'uTexture1');
   uTexture2Location=gl.getUniformLocation(shaderProgram,'uTexture2');
 
-  positionBuffer=gl.createBuffer(); 
+  positionBuffer=gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
-  const positions=[1.0,1.0,-1.0,1.0,1.0,-1.0,-1.0,-1.0];
-  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([1,1,-1,1,1,-1,-1,-1]),gl.STATIC_DRAW);
 
   texture1=loadTexture('texture/1.jpg',gl.TEXTURE0);
   texture2=loadTexture('texture/2.png',gl.TEXTURE1);
 
   requestAnimationFrame(render);
 }
-
 function createShader(gl,type,source){
-  const shader=gl.createShader(type);
-  gl.shaderSource(shader,source);
-  gl.compileShader(shader);
-  if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)){
-    alert('着色器编译失败:'+gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader); return null;
-  }
-  return shader;
+  const s=gl.createShader(type); gl.shaderSource(s,source); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ alert('着色器编译失败:'+gl.getShaderInfoLog(s)); gl.deleteShader(s); return null; }
+  return s;
 }
 function createShaderProgram(gl,vs,fs){
-  const prog=gl.createProgram();
-  gl.attachShader(prog,vs);
-  gl.attachShader(prog,fs);
-  gl.linkProgram(prog);
-  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){
-    alert('无法初始化着色器程序:'+gl.getProgramInfoLog(prog));
-    return null;
-  }
-  return prog;
+  const p=gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ alert('无法初始化着色器程序:'+gl.getProgramInfoLog(p)); return null; }
+  return p;
 }
 function loadTexture(url,unit){
   const tex=gl.createTexture();
@@ -365,11 +317,9 @@ function loadTexture(url,unit){
   img.src=url;
   return tex;
 }
-
 function render(now){
   now/=1000.0;
   gl.useProgram(shaderProgram);
-
   const posLoc=gl.getAttribLocation(shaderProgram,'aVertexPosition');
   gl.enableVertexAttribArray(posLoc);
   gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
@@ -392,16 +342,13 @@ function render(now){
 
   requestAnimationFrame(render);
 }
-
-window.addEventListener('resize',resizeCanvas,false);
-function init(){ resizeCanvas(); initWebGL(); }
-window.addEventListener('load', init);
-
 function resizeCanvas(){
   canvas.width=window.innerWidth;
   canvas.height=window.innerHeight;
   if(gl) gl.viewport(0,0,canvas.width,canvas.height);
 }
+window.addEventListener('load', ()=>{ resizeCanvas(); initWebGL(); }, {once:true});
+window.addEventListener('resize', resizeCanvas);
 </script>
 
 <!-- 注入菜单 -->
