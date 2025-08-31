@@ -19,7 +19,7 @@
 
 <canvas id="glCanvas"></canvas>
 
-<!-- 音源：你的 MP4（仅音轨/黑画面也可） -->
+<!-- 音源：MP4（点击后开始 + 1s 渐入） -->
 <video id="audioVideo"
        src="sounds/sound1.mp4"
        preload="auto"
@@ -30,7 +30,6 @@
 <video class="work-video" muted playsinline></video>
 <img class="work-image" alt="hidden placeholder">
 
-<!-- 占位配置 -->
 <script id="page-media-config" type="application/json">
 {
   "startIndex": 0,
@@ -85,24 +84,19 @@ let texture1, texture2, uTexture1Location, uTexture2Location;
 let mousePos={x:0,y:0}; 
 let canvas=document.getElementById('glCanvas');
 
-/* ========= 音频（点击后开始 + 1s 渐入） ========= */
+/* ========= 音频：点击后开始 + 1s 渐入（GainNode） ========= */
 const VIDEO = document.getElementById('audioVideo');
 
 let audioCtx = null, analyser = null, freqData = null, audioLevel = 0;
 let mediaSourceNode = null, gainNode = null;
-let audioWired = false;    // 是否已把 <video> 接入 WebAudio
-let started = false;       // 是否已经启动过（只启一次）
+let wired = false, started = false;
 
 async function startAudioOnGesture(){
-  if(started) return;
-  started = true;
-
+  if(started) return; started = true;
   try{
-    // 1) 创建/恢复 AudioContext（手势中允许）
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if(audioCtx.state === 'suspended') await audioCtx.resume();
 
-    // 2) 节点：MediaElementSource -> Gain -> (Analyser & Destination)
     if(!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(VIDEO);
     if(!gainNode){
       gainNode = audioCtx.createGain();
@@ -114,34 +108,26 @@ async function startAudioOnGesture(){
       analyser.smoothingTimeConstant = 0.85;
       freqData = new Uint8Array(analyser.frequencyBinCount);
     }
-
-    if(!audioWired){
+    if(!wired){
       mediaSourceNode.connect(gainNode);
       gainNode.connect(analyser);
       gainNode.connect(audioCtx.destination);
-      audioWired = true;
+      wired = true;
     }
 
-    // 3) 配置视频并播放（只播一次）
     VIDEO.loop = false;
-    VIDEO.muted = false;       // 现在在手势中解静音
-    VIDEO.volume = 1.0;        // 音量全开，渐入用 gainNode 完成
-    // 从头播放（如果你想保持当前位置，可移除这一行）
+    VIDEO.muted = false;   // 手势内允许解静音
+    VIDEO.volume = 1.0;
     try { VIDEO.currentTime = 0; } catch(_) {}
     await VIDEO.play();
 
-    // 4) 线性渐入 1 秒（更稳的做法，用音频图里的 gain）
     const now = audioCtx.currentTime;
     gainNode.gain.cancelScheduledValues(now);
     gainNode.gain.setValueAtTime(0.0, now);
-    gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
-
-  }catch(e){
-    console.warn('Start audio failed:', e);
-  }
+    gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0); // 1 秒渐入
+  }catch(e){ console.warn('Start audio failed:', e); }
 }
 
-// 绑定一次性用户手势（点击/触摸/按键任意其一）
 (function bindOneTimeGesture(){
   const once = async () => {
     await startAudioOnGesture();
@@ -154,23 +140,20 @@ async function startAudioOnGesture(){
   window.addEventListener('touchstart', once, {once:true});
 })();
 
-// 每帧计算音频强度（低中频平均 + 二次平滑）
 function updateAudioLevel(){
   if(!analyser || !freqData) return audioLevel;
   analyser.getByteFrequencyData(freqData);
   const bins = freqData.length;
   const i0 = Math.floor(bins*0.03);   // ~80Hz
   const i1 = Math.floor(bins*0.40);   // ~1kHz
-  let sum = 0, cnt = 0;
-  for(let i=i0;i<i1;i++){ sum += freqData[i]; cnt++; }
-  const avg = cnt>0 ? (sum/cnt)/255 : 0;
+  let sum=0,cnt=0; for(let i=i0;i<i1;i++){ sum+=freqData[i]; cnt++; }
+  const avg = cnt? (sum/cnt)/255 : 0;
   const target = Math.max(0, Math.min(1, avg));
-  const SMOOTH = 0.15;                 // 二次指数平滑
+  const SMOOTH = 0.15;
   audioLevel += (target - audioLevel) * SMOOTH;
   return audioLevel;
 }
 
-// 结束后，能量缓慢衰减到 0
 VIDEO.addEventListener('ended', () => {
   const decay = () => {
     audioLevel += (0 - audioLevel) * 0.10;
@@ -215,9 +198,10 @@ function initWebGL(){
   out highp vec2 vTextureCoord;
   void main(){
     gl_Position=aVertexPosition;
-    vTextureCoord=aVertexPosition.xy*0.5+0.5;
+    vTextureCoord=aVertexPosition.xy+.5;
   }`;
 
+  /* === 保持你“最早版本”的片元着色器逻辑，仅新增一行 uniform float uAudio; === */
   const fragmentShaderSource=`#version 300 es
   precision mediump float;
   in vec4 aVertexPosition;
@@ -229,28 +213,28 @@ function initWebGL(){
   uniform sampler2D uTexture1;
   uniform sampler2D uTexture2;
   uniform float uFade;
-  uniform float uAudio;   // 0..1
+  uniform float uAudio;   // ★ 仅声明；
 
   float f(vec3 p){
-    p.z += uTime/10.0;
-    vec2 mouse = vec2(uMouse.x/u_resolution.x - 0.5, uMouse.y/u_resolution.y);
-    p.xy += mouse.xy * 5.0;
-    return length(cos(p*2.0) + 0.6*sin(p.x + uTime/2.0) + 0.03*cos((p.x*p.y+uTime))) - 0.4; 
+    p.z+=uTime/10.0;
+    vec2 mouse=vec2(uMouse.x/u_resolution.x-0.5,uMouse.y/u_resolution.y);
+    p.xy+=mouse.xy*5.;
+    return length(cos(p*2.)+.6*sin(p.x+uTime/2.)+.03*cos((p.x*p.y+uTime)))-.4; 
   }
   void main(){
-    float Fade = 1.0 - uFade;
-    float rect = u_resolution.x / u_resolution.y;
-    vec2 I = vec2(vTextureCoord.x*rect, vTextureCoord.y);
-    vec3 d = 0.5 - vec3(I, 1.0);
-    vec3 o = d;
-    float audioBoost = mix(1.00, 0.35, clamp(uAudio, 0.0, 1.0));
-    for(int i=0;i<15;i++){
-     o-=f(o)*d*0.45*uFade*audioBoost;
-    }
-    vec4 c=vec4(0.6+Fade*3.,1.0,1.4-Fade,1.0); 
+    float audioBoost = mix(1.0, 5.35, clamp(uAudio, 0.0, 1.0));
+    float Fade = 1.0-uFade;
+    float rect=u_resolution.x/u_resolution.y;
+    vec2 I=vec2(vTextureCoord.x*rect,vTextureCoord.y);
+    vec3 d=0.5-vec3(I,1.);
+    vec3 o=d*audioBoost;
+    for(int i=0;i<15;i++){ o-=f(o)*d*0.45*uFade; }
+    vec4 c=vec4(0.6+Fade*3.,1.0,1.4-Fade,1.0);
+    
     c=abs(f(o-d)*c+f(o-0.4)*(vec4(2.0,2.2,2.3,1.)-c))*(1.-.3*o.z)*0.3;
-    c.rgb += vec3(0.25, -0.14, 0.21) * uAudio; // 轻微颜色听感偏移
-    fragColor = vec4(c.rgb * uFade, 1.0);
+    // ★ 给颜色一点“听感”偏移
+    c.rgb += vec3(0.27, -0.14, 0.22) * uAudio;
+    fragColor=vec4(c.xyz*uFade,1.0);
   }`;
 
   const vertexShader=createShader(gl,gl.VERTEX_SHADER,vertexShaderSource);
@@ -261,13 +245,14 @@ function initWebGL(){
   uResolutionLocation=gl.getUniformLocation(shaderProgram,'u_resolution');
   uMouseLocation=gl.getUniformLocation(shaderProgram,'uMouse');
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
-  uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio');
+  uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio'); // 可能为 null（被优化），下面有保护
+
   uTexture1Location=gl.getUniformLocation(shaderProgram,'uTexture1');
   uTexture2Location=gl.getUniformLocation(shaderProgram,'uTexture2');
 
   positionBuffer=gl.createBuffer(); 
   gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
-  const positions=[ 1.0, 1.0,  -1.0, 1.0,   1.0,-1.0,  -1.0,-1.0 ];
+  const positions=[1.0,1.0,-1.0,1.0,1.0,-1.0,-1.0,-1.0];
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW);
 
   texture1=loadTexture('texture/1.jpg',gl.TEXTURE0);
@@ -307,8 +292,7 @@ function loadTexture(url,unit){
   img.onload=function(){
     gl.bindTexture(gl.TEXTURE_2D,tex);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
     gl.generateMipmap(gl.TEXTURE_2D);
   };
   img.src=url;
@@ -330,7 +314,7 @@ function render(now){
   gl.uniform1f(uTimeLocation,now);
   gl.uniform2f(uMouseLocation,mousePos.x,mousePos.y);
   gl.uniform1f(uFadeLocation, window.Fade?.value ?? 1.0);
-  gl.uniform1f(uAudioLocation, level);
+  if(uAudioLocation) gl.uniform1f(uAudioLocation, level); // ★ 仅在存在时传值
 
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture1); gl.uniform1i(uTexture1Location,0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texture2); gl.uniform1i(uTexture2Location,1);
@@ -342,29 +326,14 @@ function render(now){
   requestAnimationFrame(render);
 }
 
-/* ========= 事件绑定 ========= */
 window.addEventListener('resize',resizeCanvas,false);
-function init(){
-  resizeCanvas();
-  initWebGL();
-}
+function init(){ resizeCanvas(); initWebGL(); }
 window.addEventListener('load', init);
 
-/* ========= 鼠标/触控位置 ========= */
-canvas.addEventListener('mousemove',(e)=>{
-  const rect=canvas.getBoundingClientRect();
-  mousePos.x=e.clientX-rect.left;
-  mousePos.y=rect.height-(e.clientY-rect.top);
-});
-canvas.addEventListener('touchmove',handleTouchMove,{passive:false});
-function handleTouchMove(event){
-  event.preventDefault();
-  if(event.touches.length>0){
-    const touch=event.touches[0];
-    const rect=canvas.getBoundingClientRect();
-    mousePos.x=touch.clientX-rect.left;
-    mousePos.y=rect.height-(touch.clientY-rect.top);
-  }
+function resizeCanvas(){
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  if(gl) gl.viewport(0,0,canvas.width,canvas.height);
 }
 </script>
 
