@@ -140,11 +140,10 @@ async function startAudioOnGesture(){
   window.addEventListener('touchstart', once, {once:true});
 })();
 
-/* ========= ★ 新增：菜单点击时 1s 渐出后再跳转 ========= */
+/* ========= ★ 新增：菜单点击时 音频+画面 同步渐出 → 再跳转 ========= */
 const NAV_FADE_OUT_MS = 1000;
 
 function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
-  // 找到最近的 <a>（兼容嵌套元素）
   function findAnchor(el){
     while(el && el !== document){
       if(el.tagName === 'A' && el.href) return el;
@@ -155,55 +154,55 @@ function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
 
   document.addEventListener('click', (e) => {
     if (e.defaultPrevented) return;
-    if (e.button !== 0) return;                       // 仅左键
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // 有修饰键则放行（新标签等）
+    if (e.button !== 0) return;                                  // 仅左键
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;// 有修饰键放行
+
     const a = findAnchor(e.target);
     if(!a) return;
 
     const href = a.getAttribute('href');
     if(!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-    if(a.target && a.target !== '' && a.target !== '_self') return; // 新窗口不拦截
+    const tgt = a.getAttribute('target');
+    if (tgt && tgt !== '' && tgt !== '_self') return;            // 新窗口不拦截
 
-    // 不是站内跳转也可以淡出，但常见做法是只处理同源
-    // const url = new URL(a.href, location.href);
-    // if (url.origin !== location.origin) return;
+    // —— 总是拦截一次，先做“视觉淡出”
+    e.preventDefault();
 
-    // 如果音频未启动，直接跳转，不延迟
-    if(!started || !gainNode || !audioCtx){
-      return; // 不阻止默认，继续正常跳转
+    // ① 画面淡出（驱动 uFade）
+    try { window.Fade?.fadeOut(ms); } catch(_) {}
+
+    // ② 音频淡出（若已启动）
+    if (started && gainNode && audioCtx){
+      try{
+        const now = audioCtx.currentTime;
+        const dur = ms / 1000;
+        const cur = gainNode.gain.value;
+        gainNode.gain.cancelScheduledValues(now);
+        gainNode.gain.setValueAtTime(cur, now);
+        gainNode.gain.linearRampToValueAtTime(0.0, now + dur);
+      }catch(_){}
     }
 
-    // 有音频时：阻止默认 → 渐出 → 再跳转
-    e.preventDefault();
+    // ③ 延迟跳转（等待淡出完成）
+    setTimeout(() => { window.location.href = a.href; }, ms);
+  }, true); // 捕获阶段
+}
+
+/* 可编程调用：window.fadeOutAllThen(url, ms) */
+window.fadeOutAllThen = function(nextHref, ms = NAV_FADE_OUT_MS){
+  if(!nextHref) return;
+  try { window.Fade?.fadeOut(ms); } catch(_) {}
+  if (started && gainNode && audioCtx){
     try{
       const now = audioCtx.currentTime;
-      const dur = Math.max(ms, 0) / 1000;
+      const dur = ms / 1000;
       const cur = gainNode.gain.value;
       gainNode.gain.cancelScheduledValues(now);
       gainNode.gain.setValueAtTime(cur, now);
       gainNode.gain.linearRampToValueAtTime(0.0, now + dur);
-    }catch(_){ /* 忽略音频节点异常 */ }
-
-    setTimeout(() => { window.location.href = a.href; }, ms);
-  }, true); // 捕获阶段，尽量先于其它处理执行
-}
-
-// 提供可编程调用的 API：window.fadeOutAudioThen(url, ms)
-window.fadeOutAudioThen = function(nextHref, ms = NAV_FADE_OUT_MS){
-  if(!nextHref){ return; }
-  if(!started || !gainNode || !audioCtx){
-    window.location.href = nextHref;
-    return;
+    }catch(_){}
   }
-  const now = audioCtx.currentTime;
-  const dur = Math.max(ms, 0)/1000;
-  const cur = gainNode.gain.value;
-  try{
-    gainNode.gain.cancelScheduledValues(now);
-    gainNode.gain.setValueAtTime(cur, now);
-    gainNode.gain.linearRampToValueAtTime(0.0, now + dur);
-  }catch(_){}
-  setTimeout(()=>{ window.location.href = nextHref; }, ms);
+  setTimeout(() => { window.location.href = nextHref; }, ms);
 };
 
 installNavAudioFadeOut();
@@ -271,7 +270,7 @@ function initWebGL(){
     vTextureCoord=aVertexPosition.xy+.5;
   }`;
 
-  /* === 片元着色器：保持你给出的版本（仅声明 uAudio 已存在于此版本） === */
+  /* === 片元着色器：保持你提供的版本（含 uAudio 的使用） === */
   const fragmentShaderSource=`#version 300 es
   precision mediump float;
   in vec4 aVertexPosition;
