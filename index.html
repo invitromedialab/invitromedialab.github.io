@@ -1,6 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- ★ AudioGuard：一定要放在所有脚本之前 -->
+  <script>
+  (function () {
+    var unlocked = false;
+    var resumeQueue = [];   // { ctx, resolve, reject }
+    var playQueue   = [];   // { el, resolve }
+
+    // 补丁 AudioContext.resume（延后到解锁）
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    var origResume = Ctx && Ctx.prototype && Ctx.prototype.resume;
+    if (Ctx && origResume && !Ctx.prototype.__ivtPatchedResume) {
+      Ctx.prototype.__ivtPatchedResume = true;
+      Ctx.prototype.resume = function () {
+        if (unlocked) return origResume.call(this);
+        return new Promise(function (resolve, reject) {
+          resumeQueue.push({ ctx: this, resolve: resolve, reject: reject });
+        });
+      };
+    }
+
+    // 补丁 HTMLMediaElement.play（延后到解锁；避免早期报错/未处理的拒绝）
+    var H = window.HTMLMediaElement && HTMLMediaElement.prototype;
+    var origPlay = H && H.play;
+    if (H && origPlay && !H.__ivtPatchedPlay) {
+      H.__ivtPatchedPlay = true;
+      H.play = function () {
+        // 静音允许无手势播放，直接放行
+        if (unlocked || this.muted) return origPlay.call(this);
+        // 否则排队，返回已解决的 Promise，避免未处理拒绝
+        return new Promise(function (resolve) {
+          playQueue.push({ el: this, resolve: resolve });
+          resolve();
+        }.bind(this));
+      };
+    }
+
+    function unlock() {
+      if (unlocked) return;
+      unlocked = true;
+
+      // 依次恢复所有挂起的 resume
+      if (origResume) {
+        resumeQueue.splice(0).forEach(function (item) {
+          try {
+            Promise.resolve(origResume.call(item.ctx))
+              .then(item.resolve).catch(item.resolve);
+          } catch (e) { item.resolve(); }
+        });
+      }
+
+      // 依次触发所有挂起的 play
+      if (origPlay) {
+        playQueue.splice(0).forEach(function (item) {
+          try {
+            Promise.resolve(origPlay.call(item.el))
+              .then(item.resolve).catch(item.resolve);
+          } catch (e) { item.resolve(); }
+        });
+      }
+    }
+
+    // 任意一次用户手势即解锁（全局钩住，保证其它脚本也受益）
+    ['pointerdown','touchend','keydown'].forEach(function (t) {
+      window.addEventListener(t, unlock, { once: true, capture: true });
+    });
+
+    // 暴露手动解锁接口（可在自定义 tapgate 里调用）
+    window.__IVT_AUDIO_GUARD = { unlock: unlock };
+  })();
+  </script>
+  <!-- /AudioGuard -->
+
   <script>document.documentElement.classList.add('ivt-preboot');</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -13,7 +85,6 @@
     #glCanvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
     .work-image,.work-video{display:none!important}
     audio#bgm{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-    /* 首击透明接手层 */
     #tapgate{position:fixed;inset:0;z-index:999999;background:transparent;cursor:pointer}
   </style>
 </head>
@@ -24,7 +95,7 @@
 
 <canvas id="glCanvas"></canvas>
 
-<!-- MP3 音源：同域或正确CORS；确保 MIME 为 audio/mpeg -->
+<!-- MP3 音源 -->
 <audio id="bgm" src="sounds/sound1.mp3" preload="auto" playsinline></audio>
 
 <!-- 隐藏占位：给 main.js 初始化菜单 -->
@@ -39,7 +110,7 @@
 }
 </script>
 
-<!-- ===== 全局画面淡入/淡出控制 ===== -->
+<!-- ===== 全局画面淡入/淡出控制（原样） ===== -->
 <script>
 (() => {
   let value=0, rafId=null, anim=null;
@@ -76,38 +147,30 @@
 })();
 </script>
 
-<!-- ===== 音频首击必响 + 兜底、导航淡出、频谱 ===== -->
+<!-- ===== 音频首击 & 频谱（根据你之前版本整理，只把“创建/播放”放到手势后） ===== -->
 <script>
-/* ===== 全局状态 ===== */
 let gl, shaderProgram, positionBuffer;
 let uTimeLocation, uResolutionLocation, uMouseLocation, uFadeLocation, uAudioLocation;
-let texture1, texture2, uTexture1Location, uTexture2Location;
 let mousePos={x:0,y:0};
 const canvas=document.getElementById('glCanvas');
 
-/* ===== 音频对象 ===== */
 const AUDIO = document.getElementById('bgm');
 let audioCtx=null, analyser=null, gainNode=null, mediaSourceNode=null, freqData=null;
 let wired=false, started=false, usingBufferFallback=false;
 let bufferNode=null, decodedBuffer=null;
 
-/* ★ 重要修正：移除“静音预热 IIFE”和任何在手势之前触发的 play()/AudioContext 创建。
-   —— 这样就不会再出现：
-   The AudioContext was not allowed to start... 的报错 */
+/* 不在手势前创建/恢复/播放 —— 保证零报错 */
 
-/* ★ decode 改为仅在已有 audioCtx 时使用；不在函数内部创建 AudioContext */
 async function decodeOnceToBuffer(ctx) {
   if (decodedBuffer) return decodedBuffer;
-  if (!ctx) throw new Error('AudioContext not ready');
   const res = await fetch(AUDIO.src, { cache: 'force-cache' });
   const arr = await res.arrayBuffer();
   decodedBuffer = await ctx.decodeAudioData(arr);
   return decodedBuffer;
 }
 
-/* 建立音频图（仅在用户手势后调用） */
 function ensureAudioGraph(){
-  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); // ★ 手势后才会运行
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); // 手势内
   if (!gainNode) {
     gainNode = audioCtx.createGain();
     gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
@@ -127,32 +190,25 @@ function ensureAudioGraph(){
   }
 }
 
-/* 元素路径播放（等待成功/失败）——仅手势后调用 */
 async function tryPlayViaElementOnce(){
   ensureAudioGraph();
   if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-  AUDIO.muted = false;            // 可根据需要保留静音
   AUDIO.loop  = false;
   try { AUDIO.currentTime = 0; } catch(_) {}
-
-  const p = AUDIO.play();
-  if (p && typeof p.then === 'function') await p;
+  return AUDIO.play();
 }
 
-/* WebAudio Buffer 兜底（仍在同一次手势中触发） */
 async function playViaBufferFallback(){
   usingBufferFallback = true;
   ensureAudioGraph();
   if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-  // 停掉旧的
   if (bufferNode) {
     try { bufferNode.stop(); } catch(_) {}
     try { bufferNode.disconnect(); } catch(_) {}
     bufferNode = null;
   }
-  const buf = await decodeOnceToBuffer(audioCtx);  // ★ 传入现有 ctx
+  const buf = await decodeOnceToBuffer(audioCtx);
   bufferNode = audioCtx.createBufferSource();
   bufferNode.buffer = buf;
   bufferNode.loop = false;
@@ -160,7 +216,7 @@ async function playViaBufferFallback(){
   bufferNode.start();
 }
 
-/* 首击接手：强占第一次用户手势，保证同步链路 */
+/* 首击：确保先解锁 AudioGuard，再初始化/播放 */
 (function installFirstTapGate(){
   const gate = document.getElementById('tapgate');
 
@@ -169,8 +225,10 @@ async function playViaBufferFallback(){
     if (started) { gate.remove(); return; }
     started = true;
 
+    // 先全局解锁（把其它脚本里排队的 resume/play 也释放）
+    try { window.__IVT_AUDIO_GUARD?.unlock(); } catch(_) {}
+
     try{
-      // ★ 所有与音频有关的动作都放在手势回调里
       let ok = true;
       try {
         await tryPlayViaElementOnce();
@@ -181,7 +239,6 @@ async function playViaBufferFallback(){
         await playViaBufferFallback();
       }
 
-      // 音量淡入
       const now = audioCtx.currentTime;
       gainNode.gain.cancelScheduledValues(now);
       gainNode.gain.setValueAtTime(0.0, now);
@@ -191,24 +248,22 @@ async function playViaBufferFallback(){
     } catch (e) {
       console.warn('Audio unlock failed:', e);
       started = false; // 允许再次尝试
-      // 不移除 gate，让用户能再点一次
     }
   };
 
-  // 多重保险：pointerdown / touchend / keydown
   gate.addEventListener('pointerdown', onFirstTap, { once:true });
   gate.addEventListener('touchend',   onFirstTap, { once:true, passive:false });
   window.addEventListener('keydown',  onFirstTap, { once:true });
 })();
 
-/* 可选兜底：返回前台时再尝试一次解锁（仅当之前失败过） */
+/* 可选兜底：返回前台时再尝试一次 resume（不报错） */
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && audioCtx && audioCtx.state !== 'running') {
     try { await audioCtx.resume(); } catch(_){}
   }
 });
 
-/* 导航时：画面+音频 同步淡出后再跳转 */
+/* 导航淡出（原样） */
 const NAV_FADE_OUT_MS = 1000;
 function installNavAudioFadeOut(ms = NAV_FADE_OUT_MS){
   function findAnchor(el){
@@ -284,7 +339,7 @@ AUDIO.addEventListener('ended', () => {
   decay();
 });
 
-/* ====== 全局指针跟踪（capture 阶段；tapgate 在时也能拿到） ====== */
+/* 指针跟踪（原样） */
 const onPointerMove = (x,y,rect) => {
   mousePos.x = x - rect.left;
   mousePos.y = rect.height - (y - rect.top);
@@ -296,16 +351,13 @@ const onPointerMove = (x,y,rect) => {
     onPointerMove(t.clientX, t.clientY, rect);
   };
   const opts = { passive: false, capture: true };
-
   document.addEventListener('pointermove', move, opts);
   document.addEventListener('touchmove',   move, opts);
-
   const gate = document.getElementById('tapgate');
   if (gate) {
     gate.addEventListener('pointermove', move, opts);
     gate.addEventListener('touchmove',   move, opts);
   }
-
   canvas.addEventListener('pointermove', move, opts);
   canvas.addEventListener('touchmove',   move, opts);
 })();
@@ -313,7 +365,7 @@ const onPointerMove = (x,y,rect) => {
 window.addEventListener('resize',()=>resizeCanvas(),false);
 </script>
 
-<!-- ===== WebGL（保持你的着色器逻辑） ===== -->
+<!-- ===== WebGL（原样） ===== -->
 <script>
 function initWebGL(){
   const gl2 = canvas.getContext('webgl2');
@@ -334,7 +386,6 @@ function initWebGL(){
   uniform vec2 uMouse;
   uniform float uTime;
   uniform vec2 u_resolution;
-
   uniform float uFade;
   uniform float uAudio;
 
@@ -367,9 +418,6 @@ function initWebGL(){
   uMouseLocation=gl.getUniformLocation(shaderProgram,'uMouse');
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
   uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio');
-
-  uTexture1Location = gl.getUniformLocation(shaderProgram, 'uTex1');
-  uTexture2Location = gl.getUniformLocation(shaderProgram, 'uTex2');
 
   positionBuffer=gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
