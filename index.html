@@ -172,23 +172,62 @@ function playViaBufferSync() {
   gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
 }
 
-/* 首击接手：强占第一次用户手势，保证同步链路 */
+/* 首击接手：如果点的是菜单/链接，直接放行；否则才用来解锁音频 */
 (function installFirstTapGate(){
   const gate = document.getElementById('tapgate');
+  if (!gate) return;
+
+  // 允许“直通”的目标（菜单按钮、侧栏、链接等）
+  const BYPASS_SEL = '#menuButton, .sidebar-menu, nav a, a, button, [data-nav]';
+
+  function getPoint(e){
+    if (e.changedTouches && e.changedTouches[0]) {
+      return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  // 把点击转发给当前点位下的真实元素
+  function forwardClickAt(x, y){
+    const prev = gate.style.pointerEvents;
+    gate.style.pointerEvents = 'none';
+    const real = document.elementFromPoint(x, y);
+    gate.style.pointerEvents = prev;
+    if (!real) return;
+
+    const target = real.closest(BYPASS_SEL) || real;
+    const evt = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+    target.dispatchEvent(evt);
+  }
 
   const onFirstTap = async (ev) => {
-    // 抢先处理，避免被其它监听截胡
-    ev.preventDefault();
-    // ev.stopPropagation(); // 去掉，避免阻断后续监听
+    const { x, y } = getPoint(ev);
+
+    // 1) 先探测是否点在“应直通”的 UI 上
+    gate.style.pointerEvents = 'none';
+    const real = document.elementFromPoint(x, y);
+    gate.style.pointerEvents = '';
+
+    const shouldBypass = !!(real && real.closest(BYPASS_SEL));
+
+    if (shouldBypass) {
+      // 直接放行菜单/链接：不启动音乐
+      gate.remove();
+      ev.preventDefault();
+      forwardClickAt(x, y);
+      return;
+    }
+
+    // 2) 非 UI 点击才用来解锁音频
+    ev.preventDefault(); // 保持手势链“纯净”，提高解锁成功率
 
     if (started) { gate.remove(); return; }
     started = true;
 
     try{
-      // 创建/恢复 AudioContext（手势中）
       audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') {
-        await audioCtx.resume(); // 允许 await，仍在手势回调中
+        await audioCtx.resume();
       }
 
       try {
@@ -208,13 +247,12 @@ function playViaBufferSync() {
       console.warn('Audio unlock failed:', e);
       started = false; // 允许再次尝试
     } finally {
-      // 移除透明接手层
       gate.remove();
     }
   };
 
   // 多重保险：pointerdown / touchend / keydown
-  gate.addEventListener('pointerdown', onFirstTap, { once:true });
+  gate.addEventListener('pointerdown', onFirstTap, { once:true, passive:false });
   gate.addEventListener('touchend',   onFirstTap, { once:true, passive:false });
   window.addEventListener('keydown',  onFirstTap, { once:true });
 })();
