@@ -30,6 +30,18 @@
     startIndex: 0
   };
 
+  /** ========= 统一设置 <video> 属性（静音/自动播放/内联/循环） ========= */
+  function ensureVideoAttrs(vid){
+    if (!vid) return;
+    vid.muted = true;
+    vid.autoplay = true;
+    vid.loop = false;
+    vid.playsInline = true;
+    vid.setAttribute('playsinline','');
+    vid.setAttribute('webkit-playsinline','');
+    try { vid.preload = 'auto'; } catch(e){}
+  }
+
   /** ========= Page Fade (enter/exit) ========= */
   const FADE = {
     IN_DURATION: 700,
@@ -177,9 +189,7 @@
     } else {
       return new Promise(res => {
         const v = document.createElement("video");
-        v.preload = "auto";
-        v.muted = true;
-        v.playsInline = true;
+        ensureVideoAttrs(v);           // ★ 保证预加载用 <video> 也静音/内联
         v.src = src;
         const done = () => { v.removeAttribute("src"); v.load(); res(); };
         v.addEventListener("loadeddata", done, { once: true });
@@ -216,6 +226,9 @@
       wireMenu(menuEl, btnEl);
       return;
     }
+
+    // ★ 页面里的主 <video> 先设置所需属性
+    ensureVideoAttrs(vidEl);
 
     let index = Math.max(0, Math.min(+cfg.startIndex || 0, cfg.media.length - 1));
     let busy  = false;
@@ -288,6 +301,7 @@
             vidEl.appendChild(source);
           }
           source.src = src;
+          ensureVideoAttrs(vidEl);     // ★ 每次切换前确保属性在位
           vidEl.load();
           vidEl.style.display = "block";
           vidEl.style.opacity = 0;
@@ -310,6 +324,7 @@
             vidEl.appendChild(source);
           }
           source.src = src;
+          ensureVideoAttrs(vidEl);     // ★
           vidEl.load();
           vidEl.onloadeddata = () => {
             vidEl.play().catch(()=>{});
@@ -349,6 +364,7 @@
             vidEl.appendChild(source);
           }
           source.src = src;
+          ensureVideoAttrs(vidEl);     // ★ 即时切换也保证属性
           vidEl.load();
           vidEl.style.display = "block";
           vidEl.style.opacity = 1;
