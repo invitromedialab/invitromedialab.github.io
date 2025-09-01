@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('ivt-preboot');</script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>&Lambda;-7</title>
+  <link rel="icon" href="imgs/icon/icon.png" type="image/png">
+  <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+  <!-- 菜单与侧栏由 assets/js/main.js 动态注入 -->
+
+  <video class="work-video" playsinline muted loop></video>
+  <img class="work-image" alt="Work Image">
+
+  <div class="work-description">
+    <h1>&Lambda;-7</h1>
+    <p>Robotic installation</p>
+    <p>2024–2025</p>
+    <p>
+      &Lambda;-7 is a robot that employs the same artificial neural network as the virtual agents.
+      Just as it was beginning to learn how to move, we interrupted its training process and allowed
+      it to directly control a real physical robot. Although the virtual and physical robots share
+      identical bodies, and the simulated world closely approximates ours in various parameters,
+      once this "soul" gains a real body and enters the physical world, can it still move as freely
+      as it did in the virtual environment?
+    </p>
+    <p>
+      The work probes the gap between symbolic learning in simulation and embodied action in reality,
+      questioning how such differences shape AI behavior and our future coexistence with intelligent systems.
+    </p>
+  </div>
+
+  <!-- 仅数据：严格 JSON，不能有注释或多余逗号 -->
+  <script id="page-media-config" type="application/json">
+  {
+    "startIndex": 0,
+    "transitionMs": 500,
+    "media": [
+      { "type": "image", "src": "imgs/temporary-soul/robot.jpg" },
+      { "type": "image", "src": "imgs/temporary-soul/overview.jpg" }
+    ]
+  }
+  </script>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>

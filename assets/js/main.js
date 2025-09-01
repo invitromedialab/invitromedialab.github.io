@@ -11,6 +11,7 @@
       { href: "desert-star.html",                                label: "Desert Star" },
       { href: "sunlight-trapped-under-the-earth.html",           label: "Sunlight Trapped Under the Earth" },
       { href: "temporary-soul.html",                             label: "Temporary Soul" },
+      { href: "lambda-7.html",                                   label: "Lambda-7" },
       { href: "standing-at-the-center-of-the-continental-shelf.html", label: "Standing at the center of the continental shelf" },
       { href: "palace-of-oblivion.html",                         label: "Palace of oblivion" },
       { href: "biography.html",                                  label: "Biography" }
