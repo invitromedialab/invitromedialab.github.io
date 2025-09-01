@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+  
 <head>
   <script>document.documentElement.classList.add('ivt-preboot');</script>
   <meta charset="UTF-8" />
@@ -99,7 +100,7 @@ let bufferNode=null, decodedBuffer=null;
 /* 兜底：提前一次 decode（仅在首击里触发） */
 async function decodeOnceToBuffer() {
   if (decodedBuffer) return decodedBuffer;
-  const res = await fetch(AUDIO.src, { mode: 'cors', cache: 'force-cache' });
+  const res = await fetch(AUDIO.src, { cache: 'force-cache' });
   const arr = await res.arrayBuffer();
   decodedBuffer = await (audioCtx || new (window.AudioContext||window.webkitAudioContext)()).decodeAudioData(arr);
   return decodedBuffer;
