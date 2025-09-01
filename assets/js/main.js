@@ -1,5 +1,64 @@
-
 (() => {
+  /* ========== ★ AudioGuard：拦截手势前的 resume()/play()，待解锁后统一执行 ========== */
+  (function () {
+    if (window.__IVT_AUDIO_GUARD) return;
+    let unlocked = false;
+    const resumeQueue = [];  // { ctx, resolve, reject }
+    const playQueue   = [];  // { el, resolve }
+
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const H   = window.HTMLMediaElement && HTMLMediaElement.prototype;
+
+    const origResume = Ctx && Ctx.prototype && Ctx.prototype.resume;
+    if (Ctx && origResume && !Ctx.prototype.__ivtPatchedResume) {
+      Ctx.prototype.__ivtPatchedResume = true;
+      Ctx.prototype.resume = function () {
+        if (unlocked) return origResume.call(this);
+        return new Promise((resolve, reject) => {
+          resumeQueue.push({ ctx: this, resolve, reject });
+        });
+      };
+    }
+
+    const origPlay = H && H.play;
+    if (H && origPlay && !H.__ivtPatchedPlay) {
+      H.__ivtPatchedPlay = true;
+      H.play = function () {
+        // 静音允许自动播放，放行；否则排队，返回已解决Promise避免未捕获拒绝
+        if (unlocked || this.muted) return origPlay.call(this);
+        return new Promise((resolve) => { playQueue.push({ el: this, resolve }); resolve(); });
+      };
+    }
+
+    function unlock() {
+      if (unlocked) return;
+      unlocked = true;
+
+      // 释放所有 resume()
+      if (origResume) {
+        resumeQueue.splice(0).forEach(item => {
+          try { Promise.resolve(origResume.call(item.ctx)).then(item.resolve).catch(item.resolve); }
+          catch { item.resolve(); }
+        });
+      }
+      // 释放所有 play()
+      if (origPlay) {
+        playQueue.splice(0).forEach(item => {
+          try { Promise.resolve(origPlay.call(item.el)).then(item.resolve).catch(item.resolve); }
+          catch { item.resolve(); }
+        });
+      }
+    }
+
+    // 任意一次用户手势即解锁（全局）
+    ['pointerdown','touchend','keydown'].forEach(t => {
+      window.addEventListener(t, unlock, { once:true, capture:true });
+    });
+
+    window.__IVT_AUDIO_GUARD = { unlock, get unlocked(){return unlocked;} };
+  })();
+  /* ============================= /AudioGuard ============================= */
+
   // —— 将 ivt-preboot 整合进 JS：脚本加载时立即加上，防止首帧抖动 ——
   try { document.documentElement.classList.add('ivt-preboot'); } catch(e){}
 
@@ -216,9 +275,20 @@
       return;
     }
 
-    // 避免 HTML 上意外写了 loop 影响 ended 事件
+    // ★ 移动端策略：强制静音 + 行内播放，避免策略阻挡
+    vidEl.muted = true;
+    vidEl.setAttribute('playsinline','');
+    vidEl.removeAttribute('autoplay'); // 避免策略下的报错
     vidEl.loop = false;
-    vidEl.removeAttribute('loop');
+
+    // —— 用户解锁标志（任意手势后置 true）——
+    let userUnlocked = !!window.__IVT_AUDIO_GUARD?.unlocked;
+    const unlockOnce = () => {
+      userUnlocked = true;
+      try { window.__IVT_AUDIO_GUARD?.unlock(); } catch {}
+      ['pointerdown','touchend','keydown'].forEach(t => document.removeEventListener(t, unlockOnce, true));
+    };
+    ['pointerdown','touchend','keydown'].forEach(t => document.addEventListener(t, unlockOnce, { once:true, capture:true }));
 
     let index = Math.max(0, Math.min(+cfg.startIndex || 0, cfg.media.length - 1));
     let busy  = false;
@@ -294,7 +364,6 @@
       vidEl.onended = null;
       const handler = () => {
         if (busy) {
-          // 等过渡结束再切，避免与 crossfade 竞争
           const t = setInterval(() => {
             if (!busy) { clearInterval(t); handleVideoEnded(); }
           }, 40);
@@ -335,6 +404,14 @@
       }
     }
 
+    function playVideoSafe() {
+      // 移动端：未解锁 => 保持静音播放；解锁后若需要出声，你可以在别处取消静音
+      if (!userUnlocked) vidEl.muted = true;
+      // play() 已被 AudioGuard 补丁为手势前排队，不会触发未授权报错
+      const p = vidEl.play();
+      if (p && typeof p.catch === 'function') p.catch(()=>{});
+    }
+
     function crossfadeToVideo(src) {
       busy = true;
       if (currentType === "image") {
@@ -352,8 +429,7 @@
           vidEl.style.display = "block";
           vidEl.style.opacity = 0;
           vidEl.onloadeddata = () => {
-            vidEl.loop = false;
-            vidEl.play().catch(()=>{});
+            playVideoSafe();
             bindVideoEnded();
             requestAnimationFrame(() => {
               fadeTo(vidEl, 1);
@@ -374,8 +450,7 @@
           source.src = src;
           vidEl.load();
           vidEl.onloadeddata = () => {
-            vidEl.loop = false;
-            vidEl.play().catch(()=>{});
+            playVideoSafe();
             bindVideoEnded();
             requestAnimationFrame(() => {
               fadeTo(vidEl, 1);
@@ -417,9 +492,8 @@
           vidEl.load();
           vidEl.style.display = "block";
           vidEl.style.opacity = 1;
-          vidEl.loop = false;
-          vidEl.play().catch(()=>{});
-          bindVideoEnded(); // 即时切视频也绑定 ended
+          playVideoSafe();          // ★ 即时切视频也走安全播放
+          bindVideoEnded();
           currentType = "video";
         } else {
           crossfadeToVideo(src);
@@ -427,7 +501,7 @@
       }
     }
 
-    // 初始渲染（瞬时），避免与遮罩重复动画
+    // 初始渲染：瞬时（不触发播放），避免与遮罩重复动画
     showByIndex(index, true);
 
     wireMenu(menuEl, btnEl);
@@ -525,4 +599,3 @@
     }
   });
 })();
-
