@@ -30,13 +30,13 @@
     startIndex: 0
   };
 
-  /** ========= 统一设置 <video> 属性（静音/自动播放/内联/循环） ========= */
+  /** ========= 统一设置 <video> 属性（静音/自动播放/内联；不再 loop） ========= */
   function ensureVideoAttrs(vid){
     if (!vid) return;
-    vid.muted = true;
-    vid.autoplay = true;
-    vid.loop = true;
-    vid.playsInline = true;
+    vid.muted = true;                 // iOS 自动播放关键
+    vid.autoplay = true;              // 自动播放
+    vid.playsInline = true;           // 内联（JS 属性）
+    vid.removeAttribute('loop');      // 确保不循环
     vid.setAttribute('playsinline','');
     vid.setAttribute('webkit-playsinline','');
     try { vid.preload = 'auto'; } catch(e){}
@@ -189,7 +189,7 @@
     } else {
       return new Promise(res => {
         const v = document.createElement("video");
-        ensureVideoAttrs(v);           // ★ 保证预加载用 <video> 也静音/内联
+        ensureVideoAttrs(v);           // 预加载用 <video> 也静音/内联（不循环）
         v.src = src;
         const done = () => { v.removeAttribute("src"); v.load(); res(); };
         v.addEventListener("loadeddata", done, { once: true });
@@ -227,7 +227,7 @@
       return;
     }
 
-    // ★ 页面里的主 <video> 先设置所需属性
+    // 页面里的主 <video> 先设置所需属性（不循环）
     ensureVideoAttrs(vidEl);
 
     let index = Math.max(0, Math.min(+cfg.startIndex || 0, cfg.media.length - 1));
@@ -301,7 +301,7 @@
             vidEl.appendChild(source);
           }
           source.src = src;
-          ensureVideoAttrs(vidEl);     // ★ 每次切换前确保属性在位
+          ensureVideoAttrs(vidEl);     // 确保属性在位（不循环）
           vidEl.load();
           vidEl.style.display = "block";
           vidEl.style.opacity = 0;
@@ -324,7 +324,7 @@
             vidEl.appendChild(source);
           }
           source.src = src;
-          ensureVideoAttrs(vidEl);     // ★
+          ensureVideoAttrs(vidEl);     // 确保属性在位（不循环）
           vidEl.load();
           vidEl.onloadeddata = () => {
             vidEl.play().catch(()=>{});
@@ -337,6 +337,18 @@
         });
       }
     }
+
+    // —— 自动切换：视频结束后，进入下一个素材 —— //
+    let endedBound = false;
+    function onVideoEnded(){
+      if (busy) return;
+      next();
+    }
+    if (!endedBound) {
+      vidEl.addEventListener('ended', onVideoEnded);
+      endedBound = true;
+    }
+
     function showByIndex(i, instant=false) {
       const item = cfg.media[i];
       if (!item) return;
@@ -364,7 +376,7 @@
             vidEl.appendChild(source);
           }
           source.src = src;
-          ensureVideoAttrs(vidEl);     // ★ 即时切换也保证属性
+          ensureVideoAttrs(vidEl);     // 不循环
           vidEl.load();
           vidEl.style.display = "block";
           vidEl.style.opacity = 1;
@@ -375,6 +387,7 @@
         }
       }
     }
+
     function next() {
       if (busy) return;
       index = (index + 1) % cfg.media.length;
