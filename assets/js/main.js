@@ -1,3 +1,4 @@
+
 (() => {
   // —— 将 ivt-preboot 整合进 JS：脚本加载时立即加上，防止首帧抖动 ——
   try { document.documentElement.classList.add('ivt-preboot'); } catch(e){}
@@ -27,7 +28,10 @@
       menuButton: "#menuButton"
     },
     transitionMs: 500,
-    startIndex: 0
+    startIndex: 0,
+
+    // 新增：视频结束后的动作：'next' | 'nextImage'
+    videoEndBehavior: 'next'
   };
 
   /** ========= Page Fade (enter/exit) ========= */
@@ -48,7 +52,7 @@
         inset: "0",
         background: "#000",
         zIndex: "99999",
-        opacity: "1",                  // 初始黑场
+        opacity: "1",
         pointerEvents: "none",
         willChange: "opacity",
         transition: `opacity ${this.IN_DURATION}ms ${this.EASING}`
@@ -57,15 +61,11 @@
       this.overlay = el;
       return el;
     },
-
-    // 入口：1 -> 0
     enter() {
       if (this.reduce) { this.hide(); return; }
       const o = this.ensureOverlay();
       requestAnimationFrame(() => { o.style.opacity = "0"; });
     },
-
-    // 退出：0 -> 1
     exitAndNavigate(url) {
       if (this.reduce) { location.href = url; return; }
       if (this.exiting) return;
@@ -78,7 +78,6 @@
 
       setTimeout(() => { location.href = url; }, this.OUT_DURATION + 60);
     },
-
     hide() {
       if (!this.overlay) return;
       this.overlay.style.opacity = "0";
@@ -132,7 +131,7 @@
       const a = document.createElement("a");
       a.href = base + item.href;
       a.textContent = item.label;
-      a.title = item.label; // ★ 新增：用于悬浮提示
+      a.title = item.label;
       if (item.href === here) a.setAttribute("aria-current", "page");
       nav.appendChild(a);
     });
@@ -217,6 +216,10 @@
       return;
     }
 
+    // 避免 HTML 上意外写了 loop 影响 ended 事件
+    vidEl.loop = false;
+    vidEl.removeAttribute('loop');
+
     let index = Math.max(0, Math.min(+cfg.startIndex || 0, cfg.media.length - 1));
     let busy  = false;
     let currentType = "image";
@@ -246,6 +249,62 @@
         t.src = src;
       });
     }
+
+    // —— 判断是否图片 —— 
+    function isImageItem(item){
+      if (!item) return false;
+      if (typeof item === "string") return true;
+      return item.type === "image";
+    }
+
+    // —— 常规下一项 —— 
+    function next(){
+      if (busy) return;
+      index = (index + 1) % cfg.media.length;
+      showByIndex(index, false);
+    }
+
+    // —— 只找下一张图片 —— 
+    function nextImage(){
+      if (busy) return;
+      const n = cfg.media.length;
+      for (let step = 1; step <= n; step++){
+        const i = (index + step) % n;
+        if (isImageItem(cfg.media[i])) {
+          index = i;
+          showByIndex(index, false);
+          return;
+        }
+      }
+      next();
+    }
+
+    // —— 视频结束后的行为 —— 
+    function handleVideoEnded(){
+      if (cfg.videoEndBehavior === 'nextImage') {
+        nextImage();
+      } else {
+        next();
+      }
+    }
+
+    // —— 绑定 ended（每次切到视频后都重新绑定） —— 
+    function bindVideoEnded(){
+      vidEl.loop = false;
+      vidEl.onended = null;
+      const handler = () => {
+        if (busy) {
+          // 等过渡结束再切，避免与 crossfade 竞争
+          const t = setInterval(() => {
+            if (!busy) { clearInterval(t); handleVideoEnded(); }
+          }, 40);
+        } else {
+          handleVideoEnded();
+        }
+      };
+      vidEl.addEventListener("ended", handler, { once: true });
+    }
+
     async function crossfadeToImage(src) {
       try { await preloadImage(src); } catch(_) {}
       busy = true;
@@ -275,6 +334,7 @@
         });
       }
     }
+
     function crossfadeToVideo(src) {
       busy = true;
       if (currentType === "image") {
@@ -292,7 +352,9 @@
           vidEl.style.display = "block";
           vidEl.style.opacity = 0;
           vidEl.onloadeddata = () => {
+            vidEl.loop = false;
             vidEl.play().catch(()=>{});
+            bindVideoEnded();
             requestAnimationFrame(() => {
               fadeTo(vidEl, 1);
               currentType = "video";
@@ -312,7 +374,9 @@
           source.src = src;
           vidEl.load();
           vidEl.onloadeddata = () => {
+            vidEl.loop = false;
             vidEl.play().catch(()=>{});
+            bindVideoEnded();
             requestAnimationFrame(() => {
               fadeTo(vidEl, 1);
               currentType = "video";
@@ -322,6 +386,7 @@
         });
       }
     }
+
     function showByIndex(i, instant=false) {
       const item = cfg.media[i];
       if (!item) return;
@@ -352,20 +417,17 @@
           vidEl.load();
           vidEl.style.display = "block";
           vidEl.style.opacity = 1;
+          vidEl.loop = false;
           vidEl.play().catch(()=>{});
+          bindVideoEnded(); // 即时切视频也绑定 ended
           currentType = "video";
         } else {
           crossfadeToVideo(src);
         }
       }
     }
-    function next() {
-      if (busy) return;
-      index = (index + 1) % cfg.media.length;
-      showByIndex(index, false);
-    }
 
-    // 初始渲染：瞬时，避免与遮罩重复动画（此时首帧已被预加载）
+    // 初始渲染（瞬时），避免与遮罩重复动画
     showByIndex(index, true);
 
     wireMenu(menuEl, btnEl);
@@ -427,18 +489,15 @@
   /** ========= Boot ========= */
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      // 先插入遮罩 & 禁用媒体过渡，避免与入口遮罩打架
       EnterGuard.on();
       FADE.ensureOverlay();
 
-      // 黑幕已就位，解除预启动隐藏（内容可见但仍被黑幕覆盖）
       document.documentElement.classList.remove('ivt-preboot');
 
       injectSidebar();
 
       const cfg = await loadConfig();
 
-      // —— 计算首项并预加载 —— //
       const mediaArr = Array.isArray(cfg.media) ? cfg.media : [];
       const startIdx = Math.max(0, Math.min(+cfg.startIndex || 0, mediaArr.length - 1));
       const firstItem = mediaArr[startIdx];
@@ -446,17 +505,14 @@
         await preloadMediaItem(firstItem);
       }
 
-      // —— 等待网页字体就绪，避免淡入后字体替换导致的闪字/跳动 —— //
       if (document.fonts && document.fonts.ready) {
         try { await document.fonts.ready; } catch {}
       }
 
-      // 初始化媒体
       initMedia(cfg);
 
       wireExitFade();
 
-      // 一帧后开始淡入；淡入结束再恢复媒体元素自身的过渡
       requestAnimationFrame(() => {
         FADE.enter();
         setTimeout(() => EnterGuard.off(), FADE.IN_DURATION + 80);
