@@ -35,7 +35,7 @@
     if (!vid) return;
     vid.muted = true;
     vid.autoplay = true;
-    vid.loop = false;
+    vid.loop = true;
     vid.playsInline = true;
     vid.setAttribute('playsinline','');
     vid.setAttribute('webkit-playsinline','');
