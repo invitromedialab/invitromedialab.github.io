@@ -1,5 +1,5 @@
 (() => {
-  // —— 将 ivt-preboot 整合进 JS：脚本加载时立即加上，防止首帧抖动 ——
+  // —— 首帧抖动保护 ——
   try { document.documentElement.classList.add('ivt-preboot'); } catch(e){}
 
   /** ========= Site-wide nav config ========= */
@@ -28,19 +28,42 @@
     },
     transitionMs: 500,
     startIndex: 0,
-    fastStartMaxWaitMs: 600   // ★ 最多等这么久就开始淡入（可调）
+    fastStartMaxWaitMs: 600,       // 起播最多等待
+    nextPreload: "metadata",       // 预取下一项：metadata | auto | off
+    nextPreloadLinks: true         // 为下一段视频插入 <link rel="preload" as="video">
   };
 
-  /** ========= 统一设置 <video> 属性（静音/自动播放/内联；不循环） ========= */
+  /** ========= 统一设置 <video>（静音/自动播放/内联；不循环） ========= */
   function ensureVideoAttrs(vid){
     if (!vid) return;
     vid.muted = true;
     vid.autoplay = true;
     vid.playsInline = true;
-    vid.removeAttribute('loop');                // 不循环：播放完切下一个
+    vid.removeAttribute('loop');
     vid.setAttribute('playsinline','');
     vid.setAttribute('webkit-playsinline','');
-    try { vid.preload = 'metadata'; } catch(e){}// ★ 只拉元信息，首触更快
+    try { vid.preload = 'metadata'; } catch(e){}
+    vid.crossOrigin = vid.crossOrigin || ""; // 避免 iOS 某些策略误判
+  }
+
+  /** ========= 过渡硬化：确保从 0 → 1 有动画 ========= */
+  function fadeInFromZero(el, ms) {
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.opacity = '0';
+    void el.offsetWidth; // 强制布局
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = `opacity ${ms}ms ease`;
+        el.style.opacity = '1';
+      });
+    });
+  }
+  function fadeOutToZero(el, ms) {
+    if (!el) return;
+    el.style.transition = `opacity ${ms}ms ease`;
+    void getComputedStyle(el).opacity; // 读取一次确保过渡生效
+    el.style.opacity = '0';
   }
 
   /** ========= Page Fade (enter/exit) ========= */
@@ -61,7 +84,7 @@
         inset: "0",
         background: "#000",
         zIndex: "99999",
-        opacity: "1",                  // 初始黑场
+        opacity: "1",
         pointerEvents: "none",
         willChange: "opacity",
         transition: `opacity ${this.IN_DURATION}ms ${this.EASING}`
@@ -70,13 +93,11 @@
       this.overlay = el;
       return el;
     },
-
     enter() {
       if (this.reduce) { this.hide(); return; }
       const o = this.ensureOverlay();
       requestAnimationFrame(() => { o.style.opacity = "0"; });
     },
-
     exitAndNavigate(url) {
       if (this.reduce) { location.href = url; return; }
       if (this.exiting) return;
@@ -86,10 +107,8 @@
       o.style.transition = `opacity ${this.OUT_DURATION}ms ${this.EASING}`;
       o.style.pointerEvents = "auto";
       requestAnimationFrame(() => { o.style.opacity = "1"; });
-
       setTimeout(() => { location.href = url; }, this.OUT_DURATION + 60);
     },
-
     hide() {
       if (!this.overlay) return;
       this.overlay.style.opacity = "0";
@@ -169,10 +188,9 @@
     return { media: [] };
   }
 
-  /** ========= 首帧预加载（视频仅触发一次 metadata） ========= */
+  /** ========= 首帧预加载（视频仅 metadata） ========= */
   function preloadMediaItem(item) {
     if (!item) return Promise.resolve();
-
     const isImg = (typeof item === "string") || item.type === "image";
     const src   = (typeof item === "string") ? item : item.src;
 
@@ -184,10 +202,10 @@
       if (img.decode) { return img.decode().catch(() => {}); }
       return new Promise(res => { img.onload = img.onerror = () => res(); });
     } else {
-      // 轻量：只等 metadata，尽快返回
       return new Promise(res => {
         const v = document.createElement("video");
         ensureVideoAttrs(v);
+        v.preload = 'metadata';
         v.src = src;
         const done = () => { v.removeAttribute("src"); v.load(); res(); };
         v.addEventListener("loadedmetadata", done, { once: true });
@@ -196,18 +214,52 @@
     }
   }
 
+  /** ========= 为“下一项”做暖身（更快起播） ========= */
+  function warmNextMedia(nextItem, cfg) {
+    if (!nextItem) return;
+
+    // 1) 对视频：插入 <link rel="preload" as="video">（同域生效更佳）
+    if (cfg.nextPreloadLinks && nextItem.type === "video" && nextItem.src) {
+      const href = nextItem.src;
+      if (!document.querySelector(`link[rel="preload"][as="video"][href="${href}"]`)) {
+        const l = document.createElement('link');
+        l.rel = 'preload';
+        l.as  = 'video';
+        l.href = href;
+        l.crossOrigin = ''; // 避免某些 UA 误判
+        document.head.appendChild(l);
+      }
+    }
+    // 2) 轻量创建一个隐藏 video 触发浏览器拉取（metadata/auto）
+    if (nextItem.type === "video" && nextItem.src && cfg.nextPreload !== 'off') {
+      const ghost = document.createElement('video');
+      ensureVideoAttrs(ghost);
+      ghost.preload = cfg.nextPreload; // 'metadata' 或 'auto'
+      ghost.muted = true;
+      ghost.src = nextItem.src;
+      // 放到内存即可，不必插入 DOM；几十秒后清理
+      setTimeout(() => { try { ghost.removeAttribute('src'); ghost.load(); } catch(_){} }, 30000);
+    }
+    // 3) 图片：标准图片预取
+    if ((typeof nextItem === "string") || nextItem.type === "image") {
+      const src = (typeof nextItem === "string") ? nextItem : nextItem.src;
+      const img = new Image();
+      img.decoding = "async";
+      img.loading = "eager";
+      img.src = src;
+    }
+  }
+
   /** ========= 快速起播：尽快 play，等到 canplay 或超时就淡入 ========= */
   function playWhenReady(vid, onReady, maxWaitMs){
     if (!vid) { onReady(); return; }
     ensureVideoAttrs(vid);
 
-    // 1) 立即尝试播放（可能被策略/缓存阻塞，但我们不依赖其成功）
     try {
       const p = vid.play();
-      if (p && typeof p.catch === 'function') p.catch(()=>{ /* 忽略 */ });
-    } catch(e){ /* 忽略 */ }
+      if (p && typeof p.catch === 'function') p.catch(()=>{});
+    } catch(e){}
 
-    // 2) 如果已有足够数据，直接 ready
     const READY = 2; // HAVE_CURRENT_DATA
     if (vid.readyState >= READY) { onReady(); return; }
 
@@ -241,20 +293,18 @@
     if (!imgEl || !vidEl) { console.error("Media elements not found."); wireMenu(menuEl, btnEl); return; }
 
     ensureVideoAttrs(vidEl);
+    imgEl.style.willChange = 'opacity';
+    vidEl.style.willChange = 'opacity';
 
     let index = Math.max(0, Math.min(+cfg.startIndex || 0, cfg.media.length - 1));
     let busy  = false;
     let currentType = "image";
 
-    function fadeTo(el, opacity) {
-      el.style.transition = `opacity ${cfg.transitionMs}ms ease`;
-      el.style.opacity = opacity;
-    }
     function onTransitionEndOnce(el, cb) {
       let called = false;
       const handler = () => { if (called) return; called = true; el.removeEventListener("transitionend", handler); cb(); };
       el.addEventListener("transitionend", handler, { once: true });
-      setTimeout(() => { if (!called) { el.removeEventListener("transitionend", handler); cb(); } }, cfg.transitionMs + 60);
+      setTimeout(() => { if (!called) { el.removeEventListener("transitionend", handler); cb(); } }, cfg.transitionMs + 80);
     }
     function preloadImage(src) {
       return new Promise((resolve, reject) => {
@@ -270,25 +320,21 @@
       busy = true;
 
       if (currentType === "video") {
-        fadeTo(vidEl, 0);
+        fadeOutToZero(vidEl, cfg.transitionMs);
         onTransitionEndOnce(vidEl, () => {
           try { vidEl.pause(); } catch(e){}
           vidEl.style.display = "none";
           imgEl.style.display = "block";
           imgEl.src = src;
-          imgEl.style.opacity = 0;
-          requestAnimationFrame(() => {
-            fadeTo(imgEl, 1);
-            currentType = "image";
-            setTimeout(() => { busy = false; }, cfg.transitionMs);
-          });
+          fadeInFromZero(imgEl, cfg.transitionMs);
+          currentType = "image";
+          setTimeout(() => { busy = false; }, cfg.transitionMs);
         });
       } else {
-        fadeTo(imgEl, 0);
+        fadeOutToZero(imgEl, cfg.transitionMs);
         onTransitionEndOnce(imgEl, () => {
           imgEl.src = src;
-          void imgEl.offsetWidth;
-          fadeTo(imgEl, 1);
+          fadeInFromZero(imgEl, cfg.transitionMs);
           currentType = "image";
           setTimeout(() => { busy = false; }, cfg.transitionMs);
         });
@@ -297,50 +343,45 @@
 
     function crossfadeToVideo(src) {
       busy = true;
-      const start = () => {
-        requestAnimationFrame(() => {
-          fadeTo(vidEl, 1);
-          currentType = "video";
-          setTimeout(() => { busy = false; }, cfg.transitionMs);
-        });
+
+      const startShow = () => {
+        fadeInFromZero(vidEl, cfg.transitionMs);
+        currentType = "video";
+        setTimeout(() => { busy = false; }, cfg.transitionMs);
       };
 
       if (currentType === "image") {
-        fadeTo(imgEl, 0);
+        fadeOutToZero(imgEl, cfg.transitionMs);
         onTransitionEndOnce(imgEl, () => {
           imgEl.style.display = "none";
           let source = vidEl.querySelector("source");
           if (!source) { source = document.createElement("source"); source.type = "video/mp4"; vidEl.appendChild(source); }
           source.src = src;
           ensureVideoAttrs(vidEl);
-          // 为了更快起播，不阻塞在 load/loadeddata 上
           try { vidEl.load(); } catch(e){}
           vidEl.style.display = "block";
-          vidEl.style.opacity = 0;
-
-          playWhenReady(vidEl, start, cfg.fastStartMaxWaitMs);
+          vidEl.style.transition = 'none';
+          vidEl.style.opacity = '0';
+          void vidEl.offsetWidth;
+          playWhenReady(vidEl, startShow, cfg.fastStartMaxWaitMs);
         });
       } else {
-        fadeTo(vidEl, 0);
+        fadeOutToZero(vidEl, cfg.transitionMs);
         onTransitionEndOnce(vidEl, () => {
           let source = vidEl.querySelector("source");
           if (!source) { source = document.createElement("source"); source.type = "video/mp4"; vidEl.appendChild(source); }
           source.src = src;
           ensureVideoAttrs(vidEl);
           try { vidEl.load(); } catch(e){}
-
-          playWhenReady(vidEl, () => {
-            requestAnimationFrame(() => {
-              fadeTo(vidEl, 1);
-              currentType = "video";
-              setTimeout(() => { busy = false; }, cfg.transitionMs);
-            });
-          }, cfg.fastStartMaxWaitMs);
+          vidEl.style.transition = 'none';
+          vidEl.style.opacity = '0';
+          void vidEl.offsetWidth;
+          playWhenReady(vidEl, startShow, cfg.fastStartMaxWaitMs);
         });
       }
     }
 
-    // —— 自动切换：视频结束后，进入下一个素材 —— //
+    // —— 视频播完自动切下一项 —— //
     let endedBound = false;
     function onVideoEnded(){ if (busy) return; next(); }
     if (!endedBound) { vidEl.addEventListener('ended', onVideoEnded); endedBound = true; }
@@ -348,6 +389,8 @@
     function showByIndex(i, instant=false) {
       const item = cfg.media[i];
       if (!item) return;
+
+      const nextItem = cfg.media[(i + 1) % cfg.media.length]; // 预热下一项
 
       if (typeof item === "string" || item.type === "image") {
         const src = (typeof item === "string") ? item : item.src;
@@ -361,6 +404,7 @@
         } else {
           crossfadeToImage(src);
         }
+        warmNextMedia(nextItem, cfg);
       } else if (item.type === "video") {
         const src = item.src;
         if (instant) {
@@ -372,14 +416,15 @@
           try { vidEl.load(); } catch(e){}
           vidEl.style.display = "block";
           vidEl.style.opacity = 0;
-
           playWhenReady(vidEl, () => {
-            vidEl.style.opacity = 1;    // 即时模式直接显，避免双过渡
+            vidEl.style.transition = `opacity ${cfg.transitionMs}ms ease`;
+            vidEl.style.opacity = 1;    // 首帧即时：轻淡入
             currentType = "video";
           }, cfg.fastStartMaxWaitMs);
         } else {
           crossfadeToVideo(src);
         }
+        warmNextMedia(nextItem, cfg);
       }
     }
 
@@ -389,9 +434,8 @@
       showByIndex(index, false);
     }
 
-    // 初始渲染：瞬时
+    // 初始渲染
     showByIndex(index, true);
-
     wireMenu(menuEl, btnEl);
 
     // 初始视频状态（保守处理）
