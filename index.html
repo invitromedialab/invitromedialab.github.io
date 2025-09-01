@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-  
 <head>
   <script>document.documentElement.classList.add('ivt-preboot');</script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>In Vitro</title>
   <link rel="icon" href="imgs/icon/icon.png" type="image/png">
   <link rel="stylesheet" href="assets/css/main.css">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    html,body{height:100%;overflow:hidden;font-family:'Verdana Pro Regular',Verdana,sans-serif}
+    html,body{height:100%;overflow:hidden;font-family:'Verdana Pro Regular',Verdana,sans-serif;background:#000}
     #glCanvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
     .work-image,.work-video{display:none!important}
     audio#bgm{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
@@ -25,8 +24,8 @@
 
 <canvas id="glCanvas"></canvas>
 
-<!-- MP3 音源：推荐同域；跨域需 CORS -->
-<audio id="bgm" src="sounds/sound1.mp3" preload="auto"></audio>
+<!-- MP3 音源：同域或正确CORS；确保 MIME 为 audio/mpeg -->
+<audio id="bgm" src="sounds/sound1.mp3" preload="auto" playsinline></audio>
 
 <!-- 隐藏占位：给 main.js 初始化菜单 -->
 <video class="work-video" muted playsinline></video>
@@ -97,18 +96,19 @@ let bufferNode=null, decodedBuffer=null;
   try { AUDIO.muted = true; await AUDIO.play(); AUDIO.pause(); AUDIO.currentTime=0; } catch(_) {}
 })();
 
-/* 兜底：提前一次 decode（仅在首击里触发） */
+/* 兜底：提前一次 decode（首击可能用到） */
 async function decodeOnceToBuffer() {
   if (decodedBuffer) return decodedBuffer;
   const res = await fetch(AUDIO.src, { cache: 'force-cache' });
   const arr = await res.arrayBuffer();
-  decodedBuffer = await (audioCtx || new (window.AudioContext||window.webkitAudioContext)()).decodeAudioData(arr);
+  const ctx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+  decodedBuffer = await ctx.decodeAudioData(arr);
   return decodedBuffer;
 }
 
-/* 路径1：元素直接播放（同步，不 await） */
-function playViaElementSync() {
-  if (!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(AUDIO);
+/* 建立音频图（幂等） */
+function ensureAudioGraph(){
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
   if (!gainNode) {
     gainNode = audioCtx.createGain();
     gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
@@ -119,57 +119,48 @@ function playViaElementSync() {
     analyser.smoothingTimeConstant = 0.85;
     freqData = new Uint8Array(analyser.frequencyBinCount);
   }
+  if (!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(AUDIO);
   if (!wired) {
     mediaSourceNode.connect(gainNode);
     gainNode.connect(analyser);
     gainNode.connect(audioCtx.destination);
     wired = true;
   }
-  AUDIO.muted = false;
-  AUDIO.loop  = false; // 需要循环可设 true
-  AUDIO.volume = 1.0;
-  try { AUDIO.currentTime = 0; } catch(_) {}
-
-  const p = AUDIO.play(); // 不 await，保持手势调用栈“纯净”
-  if (p && typeof p.catch === 'function') p.catch(()=>{});
-
-  const now = audioCtx.currentTime;
-  gainNode.gain.cancelScheduledValues(now);
-  gainNode.gain.setValueAtTime(0.0, now);
-  gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
 }
 
-/* 路径2：WebAudio Buffer 兜底（手势中 decode + 播放） */
-function playViaBufferSync() {
-  usingBufferFallback = true;
-  if (!gainNode) {
-    gainNode = audioCtx.createGain();
-    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
-  }
-  if (!analyser) {
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 1024;
-    analyser.smoothingTimeConstant = 0.85;
-    freqData = new Uint8Array(analyser.frequencyBinCount);
-  }
-  gainNode.connect(analyser);
-  gainNode.connect(audioCtx.destination);
+/* 元素路径播放（等待成功/失败） */
+async function tryPlayViaElementOnce(){
+  ensureAudioGraph();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
 
+  AUDIO.muted = false;
+  AUDIO.loop  = false;
+  try { AUDIO.currentTime = 0; } catch(_) {}
+
+  const playPromise = AUDIO.play();
+  if (playPromise && typeof playPromise.then === 'function') {
+    await playPromise; // 如果失败会 throw
+  }
+}
+
+/* WebAudio Buffer 兜底（同一次手势中触发） */
+async function playViaBufferFallback(){
+  usingBufferFallback = true;
+  ensureAudioGraph();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  // 停掉旧的
   if (bufferNode) {
     try { bufferNode.stop(); } catch(_) {}
-    bufferNode.disconnect();
+    try { bufferNode.disconnect(); } catch(_) {}
     bufferNode = null;
   }
+  const buf = await decodeOnceToBuffer();
   bufferNode = audioCtx.createBufferSource();
-  bufferNode.buffer = decodedBuffer;
-  bufferNode.loop = false; // 需要循环可设 true
+  bufferNode.buffer = buf;
+  bufferNode.loop = false;
   bufferNode.connect(gainNode);
   bufferNode.start();
-
-  const now = audioCtx.currentTime;
-  gainNode.gain.cancelScheduledValues(now);
-  gainNode.gain.setValueAtTime(0.0, now);
-  gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
 }
 
 /* 首击接手：强占第一次用户手势，保证同步链路 */
@@ -177,39 +168,39 @@ function playViaBufferSync() {
   const gate = document.getElementById('tapgate');
 
   const onFirstTap = async (ev) => {
-    // 抢先处理，避免被其它监听截胡
     ev.preventDefault();
-    // ev.stopPropagation(); // 去掉，避免阻断后续监听
-
+    // 不 stopPropagation，避免阻断其他监听
     if (started) { gate.remove(); return; }
     started = true;
 
     try{
-      // 创建/恢复 AudioContext（手势中）
       audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') {
-        await audioCtx.resume(); // 允许 await，仍在手势回调中
+
+      // 先试元素直播（同步在手势内）
+      let ok = true;
+      try {
+        await tryPlayViaElementOnce();
+      } catch (e) {
+        ok = false;
       }
 
-      try {
-        // 1) 先试元素直接播放（省内存）
-        playViaElementSync();
-      } catch (_) {
-        // 2) 兜底：decode + Buffer 播放（同一手势内完成）
-        try {
-          await decodeOnceToBuffer();
-          playViaBufferSync();
-        } catch (e2) {
-          console.warn('Buffer fallback failed:', e2);
-          started = false; // 允许再次尝试
-        }
+      // 失败就立刻走 Buffer 兜底（仍在同一次手势里）
+      if (!ok) {
+        await playViaBufferFallback();
       }
+
+      // 淡入
+      const now = audioCtx.currentTime;
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(0.0, now);
+      gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
+
+      // 确认流程走完再移除 gate
+      gate.remove();
     } catch (e) {
       console.warn('Audio unlock failed:', e);
       started = false; // 允许再次尝试
-    } finally {
-      // 移除透明接手层
-      gate.remove();
+      // 不移除 gate，让用户能再点一次
     }
   };
 
@@ -218,6 +209,13 @@ function playViaBufferSync() {
   gate.addEventListener('touchend',   onFirstTap, { once:true, passive:false });
   window.addEventListener('keydown',  onFirstTap, { once:true });
 })();
+
+/* 可选兜底：返回前台时再尝试一次解锁（仅当之前失败过） */
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && audioCtx && audioCtx.state !== 'running') {
+    try { await audioCtx.resume(); } catch(_){}
+  }
+});
 
 /* 导航时：画面+音频 同步淡出后再跳转 */
 const NAV_FADE_OUT_MS = 1000;
@@ -394,29 +392,15 @@ function initWebGL(){
 }
 function createShader(gl,type,source){
   const s=gl.createShader(type); gl.shaderSource(s,source); gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ alert('着色器编译失败:'+gl.getShaderInfoLog(s)); gl.deleteShader(s); return null; }
+  if(!gl.getShaderParameter(s,gl.COMPLETE_STATUS) && !gl.getShaderParameter(s,gl.COMPILE_STATUS)){
+    alert('着色器编译失败:'+gl.getShaderInfoLog(s)); gl.deleteShader(s); return null;
+  }
   return s;
 }
 function createShaderProgram(gl,vs,fs){
   const p=gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p);
   if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ alert('无法初始化着色器程序:'+gl.getProgramInfoLog(p)); return null; }
   return p;
-}
-function loadTexture(url,unit){
-  const tex=gl.createTexture();
-  gl.activeTexture(unit);
-  gl.bindTexture(gl.TEXTURE_2D,tex);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,255,255]));
-  const img=new Image();
-  img.crossOrigin='anonymous';
-  img.onload=function(){
-    gl.bindTexture(gl.TEXTURE_2D,tex);
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-    gl.generateMipmap(gl.TEXTURE_2D);
-  };
-  img.src=url;
-  return tex;
 }
 function render(now){
   now/=1000.0;
@@ -434,10 +418,6 @@ function render(now){
   gl.uniform1f(uFadeLocation, window.Fade?.value ?? 1.0);
   if(uAudioLocation) gl.uniform1f(uAudioLocation, level);
 
-  // 只有在真实声明并绑定了采样器时才设置，防止报错
-  if (uTexture1Location && texture1){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture1); gl.uniform1i(uTexture1Location,0); }
-  if (uTexture2Location && texture2){ gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texture2); gl.uniform1i(uTexture2Location,1); }
-
   gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
@@ -445,7 +425,7 @@ function render(now){
   requestAnimationFrame(render);
 }
 function resizeCanvas(){
-  const dpr = Math.min(2, window.devicePixelRatio || 1); // 适度限制 dpr
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   const w = Math.floor(window.innerWidth  * dpr);
   const h = Math.floor(window.innerHeight * dpr);
   if (canvas.width !== w || canvas.height !== h){
