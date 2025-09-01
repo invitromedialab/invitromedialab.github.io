@@ -91,24 +91,23 @@ let audioCtx=null, analyser=null, gainNode=null, mediaSourceNode=null, freqData=
 let wired=false, started=false, usingBufferFallback=false;
 let bufferNode=null, decodedBuffer=null;
 
-/* 可选：静音预热（不依赖，失败无碍） */
-(async () => {
-  try { AUDIO.muted = true; await AUDIO.play(); AUDIO.pause(); AUDIO.currentTime=0; } catch(_) {}
-})();
+/* ★ 重要修正：移除“静音预热 IIFE”和任何在手势之前触发的 play()/AudioContext 创建。
+   —— 这样就不会再出现：
+   The AudioContext was not allowed to start... 的报错 */
 
-/* 兜底：提前一次 decode（首击可能用到） */
-async function decodeOnceToBuffer() {
+/* ★ decode 改为仅在已有 audioCtx 时使用；不在函数内部创建 AudioContext */
+async function decodeOnceToBuffer(ctx) {
   if (decodedBuffer) return decodedBuffer;
+  if (!ctx) throw new Error('AudioContext not ready');
   const res = await fetch(AUDIO.src, { cache: 'force-cache' });
   const arr = await res.arrayBuffer();
-  const ctx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
   decodedBuffer = await ctx.decodeAudioData(arr);
   return decodedBuffer;
 }
 
-/* 建立音频图（幂等） */
+/* 建立音频图（仅在用户手势后调用） */
 function ensureAudioGraph(){
-  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); // ★ 手势后才会运行
   if (!gainNode) {
     gainNode = audioCtx.createGain();
     gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
@@ -128,22 +127,20 @@ function ensureAudioGraph(){
   }
 }
 
-/* 元素路径播放（等待成功/失败） */
+/* 元素路径播放（等待成功/失败）——仅手势后调用 */
 async function tryPlayViaElementOnce(){
   ensureAudioGraph();
   if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-  AUDIO.muted = false;
+  AUDIO.muted = false;            // 可根据需要保留静音
   AUDIO.loop  = false;
   try { AUDIO.currentTime = 0; } catch(_) {}
 
-  const playPromise = AUDIO.play();
-  if (playPromise && typeof playPromise.then === 'function') {
-    await playPromise; // 如果失败会 throw
-  }
+  const p = AUDIO.play();
+  if (p && typeof p.then === 'function') await p;
 }
 
-/* WebAudio Buffer 兜底（同一次手势中触发） */
+/* WebAudio Buffer 兜底（仍在同一次手势中触发） */
 async function playViaBufferFallback(){
   usingBufferFallback = true;
   ensureAudioGraph();
@@ -155,7 +152,7 @@ async function playViaBufferFallback(){
     try { bufferNode.disconnect(); } catch(_) {}
     bufferNode = null;
   }
-  const buf = await decodeOnceToBuffer();
+  const buf = await decodeOnceToBuffer(audioCtx);  // ★ 传入现有 ctx
   bufferNode = audioCtx.createBufferSource();
   bufferNode.buffer = buf;
   bufferNode.loop = false;
@@ -169,33 +166,27 @@ async function playViaBufferFallback(){
 
   const onFirstTap = async (ev) => {
     ev.preventDefault();
-    // 不 stopPropagation，避免阻断其他监听
     if (started) { gate.remove(); return; }
     started = true;
 
     try{
-      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-
-      // 先试元素直播（同步在手势内）
+      // ★ 所有与音频有关的动作都放在手势回调里
       let ok = true;
       try {
         await tryPlayViaElementOnce();
       } catch (e) {
         ok = false;
       }
-
-      // 失败就立刻走 Buffer 兜底（仍在同一次手势里）
       if (!ok) {
         await playViaBufferFallback();
       }
 
-      // 淡入
+      // 音量淡入
       const now = audioCtx.currentTime;
       gainNode.gain.cancelScheduledValues(now);
       gainNode.gain.setValueAtTime(0.0, now);
       gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
 
-      // 确认流程走完再移除 gate
       gate.remove();
     } catch (e) {
       console.warn('Audio unlock failed:', e);
@@ -306,18 +297,15 @@ const onPointerMove = (x,y,rect) => {
   };
   const opts = { passive: false, capture: true };
 
-  // document 兜底
   document.addEventListener('pointermove', move, opts);
   document.addEventListener('touchmove',   move, opts);
 
-  // tapgate 存在时也监听它
   const gate = document.getElementById('tapgate');
   if (gate) {
     gate.addEventListener('pointermove', move, opts);
     gate.addEventListener('touchmove',   move, opts);
   }
 
-  // 仍保留在 canvas 上（非必需，但不会冲突）
   canvas.addEventListener('pointermove', move, opts);
   canvas.addEventListener('touchmove',   move, opts);
 })();
@@ -380,7 +368,6 @@ function initWebGL(){
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
   uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio');
 
-  // 如果你后续添加纹理采样，这里再获取对应 uniform；目前 shader 未声明采样器
   uTexture1Location = gl.getUniformLocation(shaderProgram, 'uTex1');
   uTexture2Location = gl.getUniformLocation(shaderProgram, 'uTex2');
 
