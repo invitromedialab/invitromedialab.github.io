@@ -52,7 +52,17 @@ html,body{
   color:#808080; text-align:center;
   transition:right .5s;
   z-index:1001;
+
+  /* === 新增：侧栏自身滚动且隐藏滚动条（不影响滚动手势） === */
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  scrollbar-width:none;          /* Firefox 隐藏滚动条 */
+  touch-action:pan-y;            /* 明确允许竖向手势 */
 }
+/* WebKit 隐藏滚动条（仅隐藏样式，不禁滚动） */
+.sidebar-menu::-webkit-scrollbar{ display:none; }
+
 .sidebar-menu.active{right:0}
 .sidebar-menu div.space{height:20px}
 
@@ -179,11 +189,41 @@ html,body{
   }
 }
 
-/* ====== 自适应菜单（侧栏宽度在手机上改为 50%） ====== */
+/* ====== 自适应菜单（侧栏宽度在手机上为 50%） ====== */
 @media (max-width:768px){
-  .sidebar-menu{width:50%; right:-50%}
+  .sidebar-menu{
+    width:50%;
+    right:-50%;
+  }
   .sidebar-menu a,.sidebar-menu div{font-size:12px}
   .work-image,.work-video{height:100vh; object-fit:cover}
+}
+
+/* ====== 手机竖屏优化补丁：动态视口 + 安全区 + 可滚动可见区域 ====== */
+@media (max-width:768px){
+  .sidebar-menu{
+    /* 由上下边距限定可视区，高度自动，超出滚动 */
+    top: max(10px, env(safe-area-inset-top));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    height: auto;
+    /* 使用 100dvh 适配地址栏显隐，避免 100vh 误差 */
+    max-height: calc(100dvh - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom)));
+
+    /* 移动端收敛内边距换空间 */
+    padding: 28px 18px;
+  }
+  .sidebar-menu a{
+    font-size:14px;
+    padding:10px 0;
+  }
+  .sidebar-menu div.space{ height:14px; }
+}
+
+/* ====== 小高宽场景：再兜底一次动态视口限制 ====== */
+@media (max-height:540px){
+  .sidebar-menu{
+    max-height: calc(100dvh - 20px);
+  }
 }
 
 /* ====== 无障碍：减少动画时统一关闭过渡 ====== */

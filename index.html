@@ -14,14 +14,9 @@
     #glCanvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
     .work-image,.work-video{display:none!important}
     audio#bgm{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-    /* 首击透明接手层 */
-    #tapgate{position:fixed;inset:0;z-index:999999;background:transparent;cursor:pointer}
   </style>
 </head>
 <body>
-
-<!-- 首次点击接手层：确保首击动作被我们捕获 -->
-<div id="tapgate" aria-label="tap-to-start"></div>
 
 <canvas id="glCanvas"></canvas>
 
@@ -77,7 +72,7 @@
 })();
 </script>
 
-<!-- ===== 音频首击必响 + 兜底、导航淡出、频谱 ===== -->
+<!-- ===== 音频：仅在“菜单按钮点击”时启动 + 导航淡出 + 频谱 ===== -->
 <script>
 /* ===== 全局状态 ===== */
 let gl, shaderProgram, positionBuffer;
@@ -89,173 +84,77 @@ const canvas=document.getElementById('glCanvas');
 /* ===== 音频对象 ===== */
 const AUDIO = document.getElementById('bgm');
 let audioCtx=null, analyser=null, gainNode=null, mediaSourceNode=null, freqData=null;
-let wired=false, started=false, usingBufferFallback=false;
-let bufferNode=null, decodedBuffer=null;
+let wired=false, started=false;
 
-/* 可选：静音预热（不依赖，失败无碍） */
-(async () => {
-  try { AUDIO.muted = true; await AUDIO.play(); AUDIO.pause(); AUDIO.currentTime=0; } catch(_) {}
-})();
-
-/* 兜底：提前一次 decode（仅在首击里触发） */
-async function decodeOnceToBuffer() {
-  if (decodedBuffer) return decodedBuffer;
-  const res = await fetch(AUDIO.src, { mode: 'cors', cache: 'force-cache' });
-  const arr = await res.arrayBuffer();
-  decodedBuffer = await (audioCtx || new (window.AudioContext||window.webkitAudioContext)()).decodeAudioData(arr);
-  return decodedBuffer;
-}
-
-/* 路径1：元素直接播放（同步，不 await） */
-function playViaElementSync() {
-  if (!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(AUDIO);
-  if (!gainNode) {
-    gainNode = audioCtx.createGain();
-    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
-  }
-  if (!analyser) {
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 1024;
-    analyser.smoothingTimeConstant = 0.85;
-    freqData = new Uint8Array(analyser.frequencyBinCount);
-  }
-  if (!wired) {
-    mediaSourceNode.connect(gainNode);
-    gainNode.connect(analyser);
-    gainNode.connect(audioCtx.destination);
-    wired = true;
-  }
-  AUDIO.muted = false;
-  AUDIO.loop  = false; // 需要循环可设 true
-  AUDIO.volume = 1.0;
-  try { AUDIO.currentTime = 0; } catch(_) {}
-
-  const p = AUDIO.play(); // 不 await，保持手势调用栈“纯净”
-  if (p && typeof p.catch === 'function') p.catch(()=>{});
-
-  const now = audioCtx.currentTime;
-  gainNode.gain.cancelScheduledValues(now);
-  gainNode.gain.setValueAtTime(0.0, now);
-  gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
-}
-
-/* 路径2：WebAudio Buffer 兜底（手势中 decode + 播放） */
-function playViaBufferSync() {
-  usingBufferFallback = true;
-  if (!gainNode) {
-    gainNode = audioCtx.createGain();
-    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
-  }
-  if (!analyser) {
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 1024;
-    analyser.smoothingTimeConstant = 0.85;
-    freqData = new Uint8Array(analyser.frequencyBinCount);
-  }
-  gainNode.connect(analyser);
-  gainNode.connect(audioCtx.destination);
-
-  if (bufferNode) {
-    try { bufferNode.stop(); } catch(_) {}
-    bufferNode.disconnect();
-    bufferNode = null;
-  }
-  bufferNode = audioCtx.createBufferSource();
-  bufferNode.buffer = decodedBuffer;
-  bufferNode.loop = false; // 需要循环可设 true
-  bufferNode.connect(gainNode);
-  bufferNode.start();
-
-  const now = audioCtx.currentTime;
-  gainNode.gain.cancelScheduledValues(now);
-  gainNode.gain.setValueAtTime(0.0, now);
-  gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
-}
-
-/* 首击接手：如果点的是菜单/链接，直接放行；否则才用来解锁音频 */
-(function installFirstTapGate(){
-  const gate = document.getElementById('tapgate');
-  if (!gate) return;
-
-  // 允许“直通”的目标（菜单按钮、侧栏、链接等）
-  const BYPASS_SEL = '#menuButton, .sidebar-menu, nav a, a, button, [data-nav]';
-
-  function getPoint(e){
-    if (e.changedTouches && e.changedTouches[0]) {
-      return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-    }
-    return { x: e.clientX, y: e.clientY };
+/* —— 仅在菜单按钮点击时启动 —— */
+function installMenuAudioStart(){
+  function tryBind(btn){
+    if (!btn || btn.__bgmBound) return false;
+    btn.__bgmBound = true;
+    btn.addEventListener('click', onMenuClickStartAudio, { once: true });
+    return true;
   }
 
-  // 把点击转发给当前点位下的真实元素
-  function forwardClickAt(x, y){
-    const prev = gate.style.pointerEvents;
-    gate.style.pointerEvents = 'none';
-    const real = document.elementFromPoint(x, y);
-    gate.style.pointerEvents = prev;
-    if (!real) return;
-
-    const target = real.closest(BYPASS_SEL) || real;
-    const evt = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
-    target.dispatchEvent(evt);
-  }
-
-  const onFirstTap = async (ev) => {
-    const { x, y } = getPoint(ev);
-
-    // 1) 先探测是否点在“应直通”的 UI 上
-    gate.style.pointerEvents = 'none';
-    const real = document.elementFromPoint(x, y);
-    gate.style.pointerEvents = '';
-
-    const shouldBypass = !!(real && real.closest(BYPASS_SEL));
-
-    if (shouldBypass) {
-      // 直接放行菜单/链接：不启动音乐
-      gate.remove();
-      ev.preventDefault();
-      forwardClickAt(x, y);
-      return;
-    }
-
-    // 2) 非 UI 点击才用来解锁音频
-    ev.preventDefault(); // 保持手势链“纯净”，提高解锁成功率
-
-    if (started) { gate.remove(); return; }
+  function onMenuClickStartAudio(){
+    if (started) return;
     started = true;
-
-    try{
+    try {
       audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
+      if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+      // 节点
+      if (!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(AUDIO);
+      if (!gainNode) { gainNode = audioCtx.createGain(); gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime); }
+      if (!analyser) {
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 1024;
+        analyser.smoothingTimeConstant = 0.85;
+        freqData = new Uint8Array(analyser.frequencyBinCount);
       }
+      if (!wired) {
+        mediaSourceNode.connect(gainNode);
+        gainNode.connect(analyser);
+        gainNode.connect(audioCtx.destination);
+        wired = true;
+      }
+      AUDIO.muted = false;
+      AUDIO.loop  = false;   // 需要循环可改 true
+      AUDIO.volume = 1.0;
+      try { AUDIO.currentTime = 0; } catch(_){}
 
-      try {
-        // 1) 先试元素直接播放（省内存）
-        playViaElementSync();
-      } catch (_) {
-        // 2) 兜底：decode + Buffer 播放（同一手势内完成）
-        try {
-          await decodeOnceToBuffer();
-          playViaBufferSync();
-        } catch (e2) {
-          console.warn('Buffer fallback failed:', e2);
-          started = false; // 允许再次尝试
-        }
-      }
+      const p = AUDIO.play();
+      if (p && typeof p.catch === 'function') p.catch(()=>{});
+
+      const now = audioCtx.currentTime;
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(0.0, now);
+      gainNode.gain.linearRampToValueAtTime(1.0, now + 1.0);
     } catch (e) {
-      console.warn('Audio unlock failed:', e);
-      started = false; // 允许再次尝试
-    } finally {
-      gate.remove();
+      console.warn('Menu-click audio start failed:', e);
+      started = false; // 允许再次点击重试
+      // 重新绑定一次，以防失败
+      const btn = document.getElementById('menuButton');
+      if (btn) { btn.__bgmBound=false; installMenuAudioStart(); }
     }
-  };
+  }
 
-  // 多重保险：pointerdown / touchend / keydown
-  gate.addEventListener('pointerdown', onFirstTap, { once:true, passive:false });
-  gate.addEventListener('touchend',   onFirstTap, { once:true, passive:false });
-  window.addEventListener('keydown',  onFirstTap, { once:true });
-})();
+  // 1) 若按钮已存在，直接绑
+  const btnNow = document.getElementById('menuButton');
+  if (tryBind(btnNow)) return;
+
+  // 2) 等待 main.js 注入：MutationObserver + 兜底轮询
+  const obs = new MutationObserver(() => {
+    const btn = document.getElementById('menuButton');
+    if (tryBind(btn)) obs.disconnect();
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+
+  let tries = 0;
+  const poll = setInterval(() => {
+    const btn = document.getElementById('menuButton');
+    if (tryBind(btn) || ++tries > 60) clearInterval(poll);
+  }, 250);
+}
+installMenuAudioStart();
 
 /* 导航时：画面+音频 同步淡出后再跳转 */
 const NAV_FADE_OUT_MS = 1000;
@@ -333,7 +232,7 @@ AUDIO.addEventListener('ended', () => {
   decay();
 });
 
-/* ====== 全局指针跟踪（capture 阶段；tapgate 在时也能拿到） ====== */
+/* ====== 全局指针跟踪 ====== */
 const onPointerMove = (x,y,rect) => {
   mousePos.x = x - rect.left;
   mousePos.y = rect.height - (y - rect.top);
@@ -345,23 +244,11 @@ const onPointerMove = (x,y,rect) => {
     onPointerMove(t.clientX, t.clientY, rect);
   };
   const opts = { passive: false, capture: true };
-
-  // document 兜底
   document.addEventListener('pointermove', move, opts);
   document.addEventListener('touchmove',   move, opts);
-
-  // tapgate 存在时也监听它
-  const gate = document.getElementById('tapgate');
-  if (gate) {
-    gate.addEventListener('pointermove', move, opts);
-    gate.addEventListener('touchmove',   move, opts);
-  }
-
-  // 仍保留在 canvas 上（非必需，但不会冲突）
   canvas.addEventListener('pointermove', move, opts);
   canvas.addEventListener('touchmove',   move, opts);
 })();
-
 window.addEventListener('resize',()=>resizeCanvas(),false);
 </script>
 
@@ -420,7 +307,6 @@ function initWebGL(){
   uFadeLocation=gl.getUniformLocation(shaderProgram,'uFade');
   uAudioLocation=gl.getUniformLocation(shaderProgram,'uAudio');
 
-  // 如果你后续添加纹理采样，这里再获取对应 uniform；目前 shader 未声明采样器
   uTexture1Location = gl.getUniformLocation(shaderProgram, 'uTex1');
   uTexture2Location = gl.getUniformLocation(shaderProgram, 'uTex2');
 
@@ -472,7 +358,6 @@ function render(now){
   gl.uniform1f(uFadeLocation, window.Fade?.value ?? 1.0);
   if(uAudioLocation) gl.uniform1f(uAudioLocation, level);
 
-  // 只有在真实声明并绑定了采样器时才设置，防止报错
   if (uTexture1Location && texture1){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texture1); gl.uniform1i(uTexture1Location,0); }
   if (uTexture2Location && texture2){ gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texture2); gl.uniform1i(uTexture2Location,1); }
 
@@ -483,7 +368,7 @@ function render(now){
   requestAnimationFrame(render);
 }
 function resizeCanvas(){
-  const dpr = Math.min(2, window.devicePixelRatio || 1); // 适度限制 dpr
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   const w = Math.floor(window.innerWidth  * dpr);
   const h = Math.floor(window.innerHeight * dpr);
   if (canvas.width !== w || canvas.height !== h){
