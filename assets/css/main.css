@@ -175,7 +175,7 @@ html,body{
 }
 .work-description::-webkit-scrollbar-track{ background: transparent; }
 
-/* ====== 手机上可读性优化（仍固定左下角 + 固定高） ====== */
+/* ====== 手机上可读性优化（原始版本） ====== */
 @media (max-width:768px){
   .work-description{
     left:4%;
@@ -223,6 +223,29 @@ html,body{
 @media (max-height:540px){
   .sidebar-menu{
     max-height: calc(100dvh - 20px);
+  }
+}
+
+/* ====== 手机版说明窗口缩小，贴左下角，给画面让位 ====== */
+@media (max-width:768px){
+  .work-description{
+    left:4%;
+    bottom:max(5%, env(safe-area-inset-bottom));
+    width:76vw;                 /* 原92vw -> 缩小 */
+    height:28vh;                /* 原42vh -> 缩小 */
+    padding:10px 12px;
+    background:rgba(0,0,0,0.32);/* 更轻 */
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+    box-shadow:0 6px 22px rgba(0,0,0,0.28);
+
+    font-size:clamp(12px, 3.2vw, 14px);
+    line-height:1.55;
+    text-align:left;
+  }
+  .work-description h1{
+    font-size:1.05em;
+    margin:0 0 .4em 0;
   }
 }
 
