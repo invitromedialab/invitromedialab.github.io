@@ -34,13 +34,54 @@
   /** ========= 统一设置 <video> 属性（静音/自动播放/内联；不循环） ========= */
   function ensureVideoAttrs(vid){
     if (!vid) return;
-    vid.muted = true;
+
+    // —— 必须在设置 src 或 play() 之前就设好 —— //
+    vid.muted = true;                 // 静音有助于自动播放
     vid.autoplay = true;
     vid.playsInline = true;
-    vid.removeAttribute('loop');                // 不循环：播放完切下一个
-    vid.setAttribute('playsinline','');
-    vid.setAttribute('webkit-playsinline','');
-    try { vid.preload = 'metadata'; } catch(e){}// ★ 只拉元信息，首触更快
+
+    // 标准 & WebKit 内联
+    vid.setAttribute('playsinline', '');
+    vid.setAttribute('webkit-playsinline', '');
+
+    // QQ/微信 X5 内核偏好
+    vid.setAttribute('x5-playsinline', '');            // 允许内联
+    vid.setAttribute('x5-video-player-type', 'h5');    // 强制走 H5 播放
+    // 如需强制方向可打开：portrait / landscape
+    // vid.setAttribute('x5-video-orientation', 'portrait');
+
+    // 不循环：由逻辑切下一个
+    vid.removeAttribute('loop');
+
+    // 预加载策略：metadata 更稳
+    try { vid.preload = 'metadata'; } catch(e){}
+  }
+
+  // —— 工具：尝试播放并吞掉失败（策略可能拦截） ——
+  function tryPlay(vid){
+    if (!vid) return;
+    try {
+      const p = vid.play();
+      if (p && typeof p.catch === 'function') p.catch(()=>{});
+    } catch(e){}
+  }
+
+  // —— 仅绑定一次的微信/可见性/首次触摸开播钩子 ——
+  let __wxHooked = false;
+  function bindWeChatAutoplayHooks(vid){
+    if (__wxHooked) return;  // 全站一次即可；若希望每个 <video> 都绑，移除此行
+    __wxHooked = true;
+
+    // 微信专用：事件触发时允许直接 play
+    document.addEventListener('WeixinJSBridgeReady', () => tryPlay(vid), { once:true });
+
+    // 首次触摸兜底
+    document.addEventListener('touchstart', () => tryPlay(vid), { once:true, passive:true });
+
+    // 页面返回前台再尝试（用户从外链回来/锁屏后）
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) tryPlay(vid);
+    });
   }
 
   /** ========= Page Fade (enter/exit) ========= */
@@ -187,8 +228,8 @@
       // 轻量：只等 metadata，尽快返回
       return new Promise(res => {
         const v = document.createElement("video");
-        ensureVideoAttrs(v);
-        v.src = src;
+        ensureVideoAttrs(v);           // ★ 先设属性
+        v.src = src;                   // ★ 再设 src
         const done = () => { v.removeAttribute("src"); v.load(); res(); };
         v.addEventListener("loadedmetadata", done, { once: true });
         v.addEventListener("error",           done, { once: true });
@@ -200,12 +241,10 @@
   function playWhenReady(vid, onReady, maxWaitMs){
     if (!vid) { onReady(); return; }
     ensureVideoAttrs(vid);
+    bindWeChatAutoplayHooks(vid); // ★ 新增：微信/安卓兜底
 
     // 1) 立即尝试播放（可能被策略/缓存阻塞，但我们不依赖其成功）
-    try {
-      const p = vid.play();
-      if (p && typeof p.catch === 'function') p.catch(()=>{ /* 忽略 */ });
-    } catch(e){ /* 忽略 */ }
+    tryPlay(vid);
 
     // 2) 如果已有足够数据，直接 ready
     const READY = 2; // HAVE_CURRENT_DATA
@@ -311,10 +350,9 @@
           imgEl.style.display = "none";
           let source = vidEl.querySelector("source");
           if (!source) { source = document.createElement("source"); source.type = "video/mp4"; vidEl.appendChild(source); }
-          source.src = src;
-          ensureVideoAttrs(vidEl);
-          // 为了更快起播，不阻塞在 load/loadeddata 上
-          try { vidEl.load(); } catch(e){}
+          ensureVideoAttrs(vidEl);        // ★ 顺序：先属性
+          source.src = src;               // ★ 再 src
+          try { vidEl.load(); } catch(e){}// ★ 再 load
           vidEl.style.display = "block";
           vidEl.style.opacity = 0;
 
@@ -325,9 +363,9 @@
         onTransitionEndOnce(vidEl, () => {
           let source = vidEl.querySelector("source");
           if (!source) { source = document.createElement("source"); source.type = "video/mp4"; vidEl.appendChild(source); }
-          source.src = src;
-          ensureVideoAttrs(vidEl);
-          try { vidEl.load(); } catch(e){}
+          ensureVideoAttrs(vidEl);        // ★ 顺序：先属性
+          source.src = src;               // ★ 再 src
+          try { vidEl.load(); } catch(e){}// ★ 再 load
 
           playWhenReady(vidEl, () => {
             requestAnimationFrame(() => {
@@ -367,9 +405,9 @@
           imgEl.style.display = "none";
           let source = vidEl.querySelector("source");
           if (!source) { source = document.createElement("source"); source.type = "video/mp4"; vidEl.appendChild(source); }
-          source.src = src;
-          ensureVideoAttrs(vidEl);
-          try { vidEl.load(); } catch(e){}
+          ensureVideoAttrs(vidEl);        // ★ 先属性
+          source.src = src;               // ★ 再 src
+          try { vidEl.load(); } catch(e){}// ★ 再 load
           vidEl.style.display = "block";
           vidEl.style.opacity = 0;
 
