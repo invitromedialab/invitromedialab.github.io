@@ -44,6 +44,7 @@
 
     .content{position:absolute;inset:0;display:grid;place-items:center;padding:6vh 5vw}
 
+    /* ---------- A 方案（稳定版）: card 改为 flex 布局 ---------- */
     .card{
       max-width:min(900px,92vw);
       width:min(900px,92vw);
@@ -54,23 +55,31 @@
       padding:clamp(18px,3.5vh,36px);
       box-shadow:0 10px 40px rgba(0,0,0,.45);
       max-height:82vh;
-      overflow:hidden;                     /* 内部文本滚动 */
+      overflow:hidden;                     /* 保留以隐藏 card 以外内容 */
       opacity:0;                           /* 初始隐藏，render时淡入 */
       transform:translateY(4px);
       transition:opacity .5s ease, transform .6s ease;
+      display: flex;
+      flex-direction: column;
+      /* 辅助调试线条：如果不需要可以删除下一行 */
+      outline: 1px solid rgba(255,255,255,0.02);
     }
-    .card.show{opacity:1; transform:translateY(0);}
+
+    .card.show{ opacity:1; transform:translateY(0); }
 
     .title{font-weight:700;letter-spacing:.01em;font-size:clamp(18px,2.2vw,26px);color:#fff}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);margin:10px 0 16px}
 
+    /* ---------- text 使用 flex 填满剩余空间，min-height:0 防止溢出问题 ---------- */
     .text{
       font-size:clamp(14px,1.2vw,18px);
       line-height:1.7;
       color:#f1f3f4;
       text-align:left;
       overflow:auto;
-      max-height:calc(82vh - 84px);
+      flex: 1 1 auto;
+      min-height: 0;         /* 关键：允许在 flex 容器内真正收缩，避免子元素撑开父容器 */
+      padding-bottom: 18px;  /* 给一点底部内边距，确保最后一行可见 */
     }
     .text p{margin:.35em 0}
 
@@ -156,9 +165,10 @@
     const FIRST_CARD_DELAY       = 1000; // 首屏：图片先独占
     const CHAPTER_CARD_DELAY     = 1000; // 其后：图片先独占
     const BETWEEN_CHAPTER_PAUSE  = 0;    // 切换文本与标题的小停顿
+    const BG_LOAD_TIMEOUT        = 2000; // 如果背景加载长时间无响应，超过此时间继续渲染（毫秒）
 
     // -------- 数据 --------
- const chapters = [
+    const chapters = [
       {
         idx: 1,
         title: 'Chapitre I : Le Rêve fractal',
@@ -314,14 +324,21 @@
         if(!candidates || !candidates.length){ bg.style.backgroundImage = 'none'; resolve(null); return; }
         const img = new Image();
         let p = 0;
+        let resolved = false;
         const tryNext = ()=>{
-          if(p>=candidates.length){ bg.style.backgroundImage = 'none'; resolve(null); return; }
+          if(p>=candidates.length){
+            if(!resolved){ resolved = true; bg.style.backgroundImage = 'none'; resolve(null); }
+            return;
+          }
           const src = candidates[p++];
-          img.onload = ()=>{ bg.style.backgroundImage = `url('${encodeURI(src)}')`; resolve(src); };
+          img.onload = ()=>{ if(!resolved){ resolved = true; bg.style.backgroundImage = `url('${encodeURI(src)}')`; resolve(src); } };
           img.onerror = tryNext;
           img.src = src;
         };
         tryNext();
+
+        // 安全超时：如果背景图片一直没响应，超过 BG_LOAD_TIMEOUT 后继续 resolve（避免界面一直不出现）
+        setTimeout(()=>{ if(!resolved){ resolved = true; resolve(null); } }, BG_LOAD_TIMEOUT);
       });
     }
 
@@ -340,7 +357,7 @@
     // ★ 渲染流程：等待图片加载 → 等待独占展示时间 → 文本卡片淡入
     async function render(){
       const seq = ++renderSeq;          // 捕获当前渲染序号
-      card.classList.remove('show');    // 隐藏文字卡片
+      card.classList.remove('show');    // 隐藏文字卡片（准备 fade-in）
 
       const c = chapters[i];
 
@@ -351,7 +368,7 @@
       bar.style.width = ((i+1)/chapters.length*100).toFixed(1)+'%';
       setActiveInSidebar();
 
-      // 背景加载完成才继续
+      // 背景加载完成才继续（但有超时保护）
       await setBackgroundWithFallback(c.imageCandidates);
       if(seq !== renderSeq) return; // 若期间又触发了新渲染，则放弃本次
 
@@ -363,7 +380,9 @@
       // 更新标题与文本（此时卡片仍隐藏，随后淡入）
       titleEl.innerText = c.title;
       textEl.innerHTML = c.text;
-      textEl.scrollTop = 0;
+
+      // 确保在下一帧或布局完成后再设置 scrollTop，避免子像素/布局延迟导致最后一行被裁掉
+      requestAnimationFrame(()=> { textEl.scrollTop = 0; });
 
       // 小停顿（可选）
       await sleep(BETWEEN_CHAPTER_PAUSE);
@@ -400,8 +419,15 @@
     }
     menuBtn.addEventListener('click', ()=> toggleSidebar());
 
-    // 初始渲染
-    window.addEventListener('load', render);
+    // 初始渲染：在 DOMContentLoaded 上触发（比 window.load 更早）
+    document.addEventListener('DOMContentLoaded', ()=> {
+      try { render(); } catch(err){ console.error('render error', err); }
+    });
+
+    // 兼容：如果脚本被动态注入且 DOM 已经就绪，确保仍会渲染
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+      try { render(); } catch(err){ console.error('render error', err); }
+    }
   </script>
 </body>
 </html>
