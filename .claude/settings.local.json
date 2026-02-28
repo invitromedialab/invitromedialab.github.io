@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(du:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(file:*)"
+    ]
+  }
+}
