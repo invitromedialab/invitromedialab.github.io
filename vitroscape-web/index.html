@@ -632,12 +632,12 @@ function renderText(lang) {
 // ═══════════════════════════════════════════════════
 const KALI = {
   animate:   false,
-  timeScale: 1.17,   // animation speed
-  camT:      0,      // camera orbit position (active when !animate; try 0–400)
-  mph:       0.02,   // 0→1: gem mode → dark mode
+  timeScale: 1.21,   // animation speed
+  camT:      63,     // camera orbit position (active when !animate; try 0–400)
+  mph:       0,      // 0→1: gem mode → dark mode
   // Fractal fold vectors
-  param0:    [1.237, 0.449, 0.413],  // animated each frame when animate=true
-  param1:    [1.122, 2.5,   2.5  ],  // second endpoint of param mix
+  param0:    [0.3,   1.663, 0.237],  // animated each frame when animate=true
+  param1:    [1.368, 2.5,   2.5  ],  // second endpoint of param mix
   // Detail refinement loop
   paramFix:  [1.122, 0.776, 0.633],  // shape vector of the 5-step detail pass
   refineAmt: 0,                       // self-fold strength in detail pass
@@ -649,15 +649,15 @@ const KALI = {
   accu1:     19500,                   // colour weight: ray position (p.xyz)
   scrollCam: 0.3,                     // scroll contribution to camera orbit
   invert:     1.0,
-  hueShift:   2.9,
-  saturation: 0.5,
+  hueShift:   0,
+  saturation: 1.0,
   brightness: 1.0,
   contrast:   1.0,
   gamma:      1.0,
   // Edge transition
-  edgePos:      0.195,  // fade centre (0=bottom, 0.5=mid-screen)
-  edgeWidth:    0.041,  // softness: wider = smoother
-  edgeStrength: 0.257,  // irregularity driven by fractal colour
+  edgePos:      0.153,  // fade centre (0=bottom, 0.5=mid-screen)
+  edgeWidth:    0.104,  // softness: wider = smoother
+  edgeStrength: 0.076,  // irregularity driven by fractal colour
   edgeInvert:   0.0,    // 1.0 = flip which side is transparent
 }
 let kaliClock = 0
