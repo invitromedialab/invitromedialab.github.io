@@ -882,15 +882,25 @@
 (function(){
   var el = document.getElementById('loader-num');
   var n = 0;
+  var done = false;
+  function dismiss(){
+    if(done) return;
+    done = true;
+    var loader = document.getElementById('loader');
+    loader.style.transition = 'opacity 0.4s';
+    loader.style.opacity = '0';
+    setTimeout(function(){ loader.style.display = 'none'; }, 400);
+  }
   var iv = setInterval(function(){
     n++;
     el.textContent = n;
     if(n >= 100){
       clearInterval(iv);
-      var loader = document.getElementById('loader');
-      loader.style.transition = 'opacity 0.4s';
-      loader.style.opacity = '0';
-      setTimeout(function(){ loader.style.display = 'none'; }, 400);
+      // 等材质真正加载完再退出
+      (function wait(){
+        if(window._texturesReady) dismiss();
+        else setTimeout(wait, 50);
+      })();
     }
   }, 20);
 })();
@@ -1354,7 +1364,7 @@
   function mkTex(px){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(px));return t;}
   const tD=mkTex([30,20,15,255]),tN=mkTex([128,128,255,255]),tDp=mkTex([128,128,128,255]);
   let rc=0,tx=0.5,ty=0.5,lx=0.5,ly=0.5;
-  function loadT(t,src){const i=new Image();i.onload=function(){gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);[gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T].forEach(q=>gl.texParameteri(gl.TEXTURE_2D,q,gl.REPEAT));[gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER].forEach(q=>gl.texParameteri(gl.TEXTURE_2D,q,gl.LINEAR));rc++;};i.src=src;}
+  function loadT(t,src){const i=new Image();i.onload=function(){gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);[gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T].forEach(q=>gl.texParameteri(gl.TEXTURE_2D,q,gl.REPEAT));[gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER].forEach(q=>gl.texParameteri(gl.TEXTURE_2D,q,gl.LINEAR));rc++;if(rc>=3)window._texturesReady=true;};i.src=src;}
   const BASE='../assets/mine_rock_wall_uebmddyn_2k/Mine_Rock_Wall_uebmddyn_2K_';
   loadT(tD,BASE+'BaseColor.jpg'); loadT(tN,BASE+'Normal.jpg'); loadT(tDp,BASE+'Displacement.jpg');
   function resize(){const h=canvas.parentElement;canvas.width=h.offsetWidth;canvas.height=h.offsetHeight;gl.viewport(0,0,canvas.width,canvas.height);}
