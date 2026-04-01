@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VITROSCAPE / In Vitro Media Lab</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #fff;
+      font-family: 'Calibri', 'Calibri Light', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: #111;
+    }
+
+    canvas { display: block; }
+
+    /* ── SECTIONS — all position:fixed, moved by JS ── */
+    .section {
+      position: fixed;
+      inset: 0;
+      will-change: transform;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ══ KALI: fractal background behind S1 ══ */
+    #kali-canvas {
+      position: fixed;
+      width: 116%;
+      height: 116%;
+      top: -14%;
+      left: -8%;
+      z-index: 9;
+    }
+
+    /* ══ S1: LANDING ══ */
+    #s1 { z-index: 10; }
+
+
+    #dna-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 11;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 48px, black calc(100% - 48px), transparent 100%);
+      mask-image:         linear-gradient(to bottom, transparent 0px, black 48px, black calc(100% - 48px), transparent 100%);
+    }
+
+    #s1-body {
+      position: absolute;
+      top: 52vh;        /* ← 调这个值控制tagline的起始位置 */
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      max-width: 900px;
+      padding: 0 48px;
+    }
+
+    .s1-eyebrow { display: none; }
+    .s1-title   { display: none; }
+
+    .s1-tagline {
+      font-size: 58px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1.05;
+      color: #000;
+      margin-bottom: 22px;
+      white-space: pre-line;
+      text-shadow:
+        0 0 30px rgba(255,255,255,0.9),
+        0 0 60px rgba(255,255,255,0.6);
+    }
+
+    .s1-subtitle {
+      font-size: 10px;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: #444;
+      text-shadow: 0 0 14px rgba(255,255,255,0.9);
+    }
+
+    /* ══ S-INTRO: white intro page ══ */
+    #s-intro {
+      z-index: 7;
+      background: #fff;
+      justify-content: center;
+      align-items: center;
+      transform: translateY(100vh);  /* start off-screen */
+      top: -280px;                   /* extend above viewport to cover kali edge */
+    }
+    #s-intro::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 35vh;
+      background: linear-gradient(to bottom, transparent, #fff);
+      pointer-events: none;
+      z-index: 2;
+    }
+    #s-intro-body {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      padding: 0 48px;
+      text-align: center;
+    }
+    .s-intro-text {
+      font-size: 16px;
+      line-height: 2.0;
+      color: #111;
+      font-size-adjust: 0.54;
+    }
+    .s-intro-text p + p { margin-top: 18px; }
+    .s-intro-text em { font-style: italic; color: #555; }
+    .s-intro-text strong { font-weight: 400; }
+
+    #scroll-cue {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8.5px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #888;
+      text-shadow: 0 0 10px rgba(255,255,255,0.8);
+      cursor: pointer;
+      z-index: 2;
+      white-space: nowrap;
+      animation: cue-float 3s ease-in-out infinite;
+    }
+    @keyframes cue-float {
+      0%,100% { opacity: 0.3; transform: translateX(-50%) translateY(0); }
+      50%      { opacity: 0.9; transform: translateX(-50%) translateY(5px); }
+    }
+
+    /* ══ S2 / S3: WORKS ══ */
+    #s2, #s3 {
+      z-index: 8;
+      background: transparent;
+      pointer-events: none;
+    }
+    /* Start off-screen so they don't flash over S1 before animate() runs */
+    #s2 { transform: translateY(200vh); }
+    #s3 { transform: translateY(300vh); }
+
+    /* Section overview panel — fixed, doesn't slide with helix */
+    #section-panel {
+      position: fixed;
+      left: 44px;
+      top: 44px;
+      max-width: 290px;
+      z-index: 5;
+      pointer-events: none;
+      text-align: left;
+    }
+    #section-panel-inner {
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+    #section-panel-title {
+      font-size: 9px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 14px;
+      text-shadow: 0 0 14px rgba(255,255,255,1), 0 0 6px rgba(255,255,255,1);
+    }
+    #section-panel-bullets p {
+      font-size: 12px;
+      line-height: 1.85;
+      color: #222;
+      margin-bottom: 6px;
+      text-shadow: 0 0 14px rgba(255,255,255,1), 0 0 6px rgba(255,255,255,1);
+    }
+    #section-panel-bullets strong {
+      color: #000;
+      font-weight: 600;
+    }
+
+    /* ══ HELIX CANVAS — full screen behind S2/S3 ══ */
+    #helix-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      opacity: 0;                /* start hidden; animate() drives opacity per-frame */
+      transition: opacity 0.7s ease;
+    }
+
+    /* ══ OVERLAYS ══ */
+    #lang-nav {
+      position: fixed;
+      top: 28px; right: 36px;
+      display: flex; gap: 20px;
+      z-index: 200;
+    }
+    #lang-nav button {
+      background: none; border: none;
+      font-size: 10px; letter-spacing: 0.14em;
+      color: #ccc; cursor: pointer;
+      font-family: inherit; padding: 0;
+      transition: color 0.2s;
+    }
+    #lang-nav button:hover  { color: #666; }
+    #lang-nav button.active { color: #111; text-decoration: underline; text-underline-offset: 3px; }
+
+    #project-info {
+      position: fixed;
+      bottom: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 5;
+      pointer-events: none;
+      width: 520px;
+      max-width: 90vw;
+    }
+    #project-title {
+      font-size: 22px;
+      font-weight: 300;
+      color: rgba(0,0,0,1);
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+      transition: color 0.18s ease;
+      text-shadow: 0 0 18px rgba(255,255,255,1), 0 0 8px rgba(255,255,255,1);
+    }
+    #project-sub {
+      font-size: 11.5px;
+      color: rgba(80,80,80,1);
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+      transition: color 0.18s ease;
+      text-shadow: 0 0 14px rgba(255,255,255,1), 0 0 6px rgba(255,255,255,1);
+    }
+    #project-desc {
+      font-size: 11px;
+      color: rgba(50,50,50,1);
+      line-height: 1.75;
+      max-width: 480px;
+      white-space: normal;
+      margin: 0 auto;
+      transition: color 0.18s ease;
+      text-shadow: 0 0 14px rgba(255,255,255,1), 0 0 6px rgba(255,255,255,1);
+    }
+
+    #counter { display: none; }
+
+    /* ══ KALI PANEL ══ */
+    #kali-panel {
+      display: none;
+      position: fixed; top: 24px; left: 24px; z-index: 500;
+      width: 268px;
+      background: rgba(8,8,8,0.9);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      font-family: 'Calibri', 'Calibri Light', sans-serif;
+      color: #ccc; font-size: 10px; user-select: none;
+    }
+    #kp-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 14px; cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase; color: #555;
+    }
+    #kp-header:hover { color: #888; }
+    #kp-body { padding: 10px 14px 14px; max-height: 74vh; overflow-y: auto; }
+    #kp-body.kp-hidden { display: none; }
+    #kp-body::-webkit-scrollbar { width: 3px; }
+    #kp-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    .kp-group { margin-bottom: 11px; }
+    .kp-glabel {
+      font-size: 7px; letter-spacing: 0.24em; text-transform: uppercase;
+      color: #3a3a3a; border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding-bottom: 3px; margin-bottom: 7px;
+    }
+    .kp-row {
+      display: grid; grid-template-columns: 78px 1fr 36px;
+      align-items: center; gap: 5px; margin-bottom: 5px;
+    }
+    .kp-row label { font-size: 9px; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kp-row input[type=range] { width: 100%; cursor: pointer; accent-color: #666; }
+    .kp-row input[type=range]:disabled { opacity: 0.25; cursor: default; }
+    .kp-val { font-size: 8.5px; color: #4a4a4a; text-align: right; font-variant-numeric: tabular-nums; }
+    .kp-chk { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+    .kp-chk label { font-size: 9px; color: #777; }
+    .kp-chk input { cursor: pointer; accent-color: #aaa; }
+    .kp-color { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .kp-color label { font-size: 9px; color: #777; width: 78px; flex-shrink: 0; }
+    .kp-color input[type=color] { width: 38px; height: 17px; border: none; padding: 0; cursor: pointer; border-radius: 2px; }
+    .kp-btns { display: flex; gap: 7px; margin-top: 13px; }
+    .kp-btns button {
+      flex: 1; padding: 7px 0;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 4px; color: #999; font-size: 8px; letter-spacing: 0.12em;
+      text-transform: uppercase; cursor: pointer; font-family: inherit; transition: background 0.15s;
+    }
+    .kp-btns button:hover { background: rgba(255,255,255,0.12); }
+    #kp-save { color: #88aaee !important; border-color: rgba(100,130,255,0.22) !important; }
+    #kp-ok { font-size: 8px; color: #6a9; text-align: center; margin-top: 6px; min-height: 14px; }
+
+    /* ══ LIGHTBOX ══ */
+    #lightbox {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0);
+      pointer-events: none;
+      transition: background 0.4s ease;
+      cursor: pointer;
+    }
+    #lightbox.lb-open {
+      background: rgba(0,0,0,0.9);
+      pointer-events: all;
+    }
+    #lb-inner {
+      max-width: 88vw; max-height: 84vh;
+      transform: scale(0.05); opacity: 0;
+      transition: transform 0.52s cubic-bezier(0.34, 1.4, 0.64, 1),
+                  opacity   0.22s ease;
+    }
+    #lightbox.lb-open #lb-inner {
+      transform: scale(1); opacity: 1;
+    }
+    #lb-inner img, #lb-inner video {
+      display: block;
+      max-width: 88vw; max-height: 84vh;
+      width: auto; height: auto;
+      object-fit: contain;
+      border-radius: 2px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    }
+
+    /* ══ LOADER ══ */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease;
+    }
+    #loader.done { opacity: 0; pointer-events: none; }
+    #loader-num {
+      font-family: 'Calibri', sans-serif;
+      font-size: 23px;
+      font-weight: 400;
+      color: #aaa;
+      letter-spacing: 0.08em;
+      min-width: 3ch;
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ══ LOADER ══ -->
+<div id="loader"><span id="loader-num">0</span></div>
+
+<!-- ══ KALI BACKGROUND (S1 fractal, fixed) ══ -->
+<canvas id="kali-canvas"></canvas>
+
+<!-- ══ HELIX CANVAS (always behind S2/S3) ══ -->
+<canvas id="helix-canvas"></canvas>
+
+<!-- ══ LOGO CANVAS (fixed, fades with S1) ══ -->
+<canvas id="dna-canvas"></canvas>
+
+<!-- ══ S1: LANDING ══ -->
+<div id="s1" class="section">
+  <div id="s1-body">
+    <p class="s1-tagline" id="s1-tagline"></p>
+    <p class="s1-subtitle" id="s1-subtitle"></p>
+  </div>
+  <p id="scroll-cue">↓</p>
+</div>
+
+<!-- ══ S-INTRO: white intro page ══ -->
+<div id="s-intro" class="section">
+  <div id="s-intro-body">
+    <div class="s-intro-text" id="s-intro-text"></div>
+  </div>
+</div>
+
+<!-- ══ S2: 内容与影像 ══ -->
+<div id="s2" class="section"></div>
+
+<!-- ══ S3: 互动装置 ══ -->
+<div id="s3" class="section"></div>
+
+<!-- ══ OVERLAYS ══ -->
+<nav id="lang-nav">
+  <button class="active" data-lang="zh">中文</button>
+  <button data-lang="fr">FR</button>
+  <button data-lang="en">EN</button>
+</nav>
+
+<div id="project-info">
+  <div id="project-title"></div>
+  <div id="project-sub"></div>
+  <div id="project-desc"></div>
+</div>
+
+<!-- ══ SECTION OVERVIEW PANEL (fixed, left side) ══ -->
+<div id="section-panel">
+  <div id="section-panel-inner">
+    <p id="section-panel-title"></p>
+    <div id="section-panel-bullets"></div>
+  </div>
+</div>
+
+<div id="counter"></div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div id="lightbox"><div id="lb-inner"></div></div>
+
+<!-- ══ KALI PANEL ══ -->
+<div id="kali-panel">
+  <div id="kp-header"><span>KALI PARAMS</span><span id="kp-chevron">▾</span></div>
+  <div id="kp-body">
+
+    <div class="kp-group">
+      <div class="kp-glabel">Scroll</div>
+      <div class="kp-row"><label>uScroll</label><input type="range" id="kp-scroll-disp" min="-1" max="1" step="0.01" disabled><span class="kp-val" id="kp-scroll-v">0.000</span></div>
+      <div class="kp-row"><label>scrollCam</label><input type="range" id="kp-scrollCam" min="0" max="16" step="0.1"><span class="kp-val" id="kp-scrollCam-v"></span></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Animation</div>
+      <div class="kp-chk"><input type="checkbox" id="kp-animate"><label for="kp-animate">animate</label></div>
+      <div class="kp-row"><label>speed</label><input type="range" id="kp-timeScale" min="0" max="5" step="0.01"><span class="kp-val" id="kp-timeScale-v"></span></div>
+      <div class="kp-row"><label>camT (orbit)</label><input type="range" id="kp-camT" min="0" max="400" step="0.5"><span class="kp-val" id="kp-camT-v"></span></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Mode</div>
+      <div class="kp-row"><label>mph</label><input type="range" id="kp-mph" min="0" max="1" step="0.001"><span class="kp-val" id="kp-mph-v"></span></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Fractal fold — param0 <span style="color:#2a2a2a">(animated)</span></div>
+      <div class="kp-row"><label>x</label><input type="range" id="kp-p0x" min="0.3" max="3" step="0.001"><span class="kp-val" id="kp-p0x-v"></span></div>
+      <div class="kp-row"><label>y</label><input type="range" id="kp-p0y" min="0" max="2" step="0.001"><span class="kp-val" id="kp-p0y-v"></span></div>
+      <div class="kp-row"><label>z</label><input type="range" id="kp-p0z" min="0" max="1.5" step="0.001"><span class="kp-val" id="kp-p0z-v"></span></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Fractal fold — param1</div>
+      <div class="kp-row"><label>x</label><input type="range" id="kp-p1x" min="0" max="2.5" step="0.001"><span class="kp-val" id="kp-p1x-v"></span></div>
+      <div class="kp-row"><label>y</label><input type="range" id="kp-p1y" min="0" max="2.5" step="0.001"><span class="kp-val" id="kp-p1y-v"></span></div>
+      <div class="kp-row"><label>z</label><input type="range" id="kp-p1z" min="0" max="2.5" step="0.001"><span class="kp-val" id="kp-p1z-v"></span></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Detail refinement</div>
+      <div class="kp-row"><label>fix x</label><input type="range" id="kp-pfx" min="0" max="2" step="0.001"><span class="kp-val" id="kp-pfx-v"></span></div>
+      <div class="kp-row"><label>fix y</label><input type="range" id="kp-pfy" min="0" max="2" step="0.001"><span class="kp-val" id="kp-pfy-v"></span></div>
+      <div class="kp-row"><label>fix z</label><input type="range" id="kp-pfz" min="0" max="2" step="0.001"><span class="kp-val" id="kp-pfz-v"></span></div>
+      <div class="kp-row"><label>refineAmt</label><input type="range" id="kp-refineAmt" min="0" max="0.5" step="0.001"><span class="kp-val" id="kp-refineAmt-v"></span></div>
+      <div class="kp-row"><label>distInit</label><input type="range" id="kp-distInit" min="1" max="30" step="0.1"><span class="kp-val" id="kp-distInit-v"></span></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Colour</div>
+      <div class="kp-row"><label>gemBright</label><input type="range" id="kp-gemBright" min="0" max="6" step="0.01"><span class="kp-val" id="kp-gemBright-v"></span></div>
+      <div class="kp-color"><label>darkColor</label><input type="color" id="kp-darkColor"></div>
+      <div class="kp-row"><label>accu0</label><input type="range" id="kp-accu0" min="500" max="30000" step="100"><span class="kp-val" id="kp-accu0-v"></span></div>
+      <div class="kp-row"><label>accu1</label><input type="range" id="kp-accu1" min="500" max="30000" step="100"><span class="kp-val" id="kp-accu1-v"></span></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Edge Transition</div>
+      <div class="kp-row"><label>edgePos</label><input type="range" id="kp-edgePos" min="0" max="0.5" step="0.001"><span class="kp-val" id="kp-edgePos-v"></span></div>
+      <div class="kp-row"><label>edgeWidth</label><input type="range" id="kp-edgeWidth" min="0.005" max="0.5" step="0.001"><span class="kp-val" id="kp-edgeWidth-v"></span></div>
+      <div class="kp-row"><label>edgeStrength</label><input type="range" id="kp-edgeStrength" min="0" max="0.4" step="0.001"><span class="kp-val" id="kp-edgeStrength-v"></span></div>
+      <div class="kp-chk"><input type="checkbox" id="kp-edgeInvert"><label for="kp-edgeInvert">edgeInvert</label></div>
+    </div>
+
+    <div class="kp-group">
+      <div class="kp-glabel">Post</div>
+      <div class="kp-row"><label>hueShift</label><input type="range" id="kp-hueShift" min="0" max="6.2832" step="0.01"><span class="kp-val" id="kp-hueShift-v"></span></div>
+    </div>
+
+<div class="kp-btns">
+      <button id="kp-save">SAVE</button>
+      <button id="kp-copy">COPY JSON</button>
+    </div>
+    <div id="kp-ok"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three'
+import { SVGLoader }        from 'three/addons/loaders/SVGLoader.js'
+import { KALI_VERT, KALI_FRAG } from './shaders/kali.js'
+import { LOGO_VERT, LOGO_FRAG } from './shaders/logo.js'
+// ═══════════════════════════════════════════════════
+//  CONTENT
+// ═══════════════════════════════════════════════════
+const UI = {
+  zh: {
+    s1tagline:  'IMMERSIVE HYBRID\nREALITIES STUDIO',
+    s1subtitle: '用想象力重塑公共空间',
+    sIntroText: 'VITROSCAPE 是一家由两位毕业于<em>Le Fresnoy – Studio national des arts contemporains</em>的校友共同创立的创意工作室。我们是一支<strong>「数字梦境创造者」</strong>团队，致力于通过前沿技术突破想象力的边界，在数字媒体领域探索全新的叙事与空间维度。\n\n与专注于单一硬件设备的公司不同，VITROSCAPE 的核心优势在于一种植根于<strong>叙事想象力</strong>的创作理念。我们不将自身局限于某一特定技术，而是根据客户需求与叙事目标，灵活调动 <em>VR、AR、AI 生成、互动投影</em>等多种媒介，打造兼具<strong>趣味性、美学价值与教育意义</strong>的沉浸式体验。',
+    s1contact: 'invitromedialab@gmail.com · invitromedialab.com',
+    s2title:   '— 内容与影像 —',
+    s2caps:    '多感官沉浸体验 · 科学数据可视化 · AI程序化视觉',
+    s3title:   '— 互动装置与系统 —',
+    s3caps:    '空间感知 · 演化系统 · 机械装置 · 两地同步',
+    s2panelTitle: '内容与影像',
+    s3panelTitle: '互动装置与系统',
+    s2bullets: [
+      '<strong>多感官沉浸体验与叙事</strong> — 空间音频、气味扩散、环境温控、全息屏幕，可独立使用，也可组合成完整叙事环境',
+      '<strong>科学数据可视化</strong> — 将研究成果转化为三维动画、AR数字叠加或可进入的VR空间',
+      '<strong>AI内容制作与程序化视觉</strong> — AI生成素材、程序化动画、VFX特效与动作捕捉，具备从概念到交付的完整制作能力',
+    ],
+    s3bullets: [
+      '<strong>空间定位与互动感知</strong> — 热成像摄像头、传感器实时追踪观众位置，展厅整体对人群移动有响应',
+      '<strong>可持续演化的互动系统</strong> — 内容随每批观众行为持续改变，每次参观面对略有不同的系统状态',
+      '<strong>机械互动装置</strong> — 马达与数控驱动的机械装置，可自主运动、响应观众，或承载AI生成的行为逻辑',
+      '<strong>两地实时同步体验</strong> — 通过网络将两个物理空间实时连接，两地观众互相影响彼此所处的环境',
+    ],
+  },
+  fr: {
+    s1tagline:  'IMMERSIVE HYBRID\nREALITIES STUDIO',
+    s1subtitle: 'Reshaping Public Spaces through Imagination',
+    sIntroText: "VITROSCAPE est un studio créatif fondé par deux anciens élèves du <em>Fresnoy – Studio national des arts contemporains</em>. Nous sommes une équipe de <strong>« faiseurs de rêves numériques »</strong>, dédiés à repousser les frontières de l'imagination grâce aux technologies de pointe et à explorer de nouvelles dimensions narratives et spatiales dans le domaine des médias numériques.\n\nContrairement aux entreprises axées sur un seul dispositif matériel, la force de VITROSCAPE réside dans une approche enracinée dans l'<strong>imagination narrative</strong>. Selon les besoins du client et les objectifs narratifs, nous mobilisons avec fluidité <em>la VR, l'AR, la génération IA, la projection interactive</em> et d'autres médias pour créer des expériences immersives à la fois <strong>ludiques, esthétiques et éducatives</strong>.",
+    s1contact: 'invitromedialab@gmail.com · invitromedialab.com',
+    s2title:   '— Contenu & Image —',
+    s2caps:    'Immersif multisensoriel · Visualisation · Production IA',
+    s3title:   '— Installations & Systèmes —',
+    s3caps:    'Détection spatiale · Systèmes évolutifs · Mécanique · Double espace',
+    s2panelTitle: 'Contenu & Image',
+    s3panelTitle: 'Installations & Systèmes',
+    s2bullets: [
+      '<strong>Expérience multisensorielle & narration</strong> — audio spatial, diffusion olfactive, climatisation scénique, écrans holographiques — modulables ou combinés en environnement narratif complet',
+      '<strong>Visualisation de données scientifiques</strong> — translation de résultats de recherche en animation 3D, superposition AR ou espaces VR habitables',
+      "<strong>Production IA & visuels procéduraux</strong> — génération IA, animation procédurale, VFX, motion capture — capacité de production complète du concept à la livraison",
+    ],
+    s3bullets: [
+      '<strong>Localisation spatiale & détection interactive</strong> — caméras thermiques et capteurs suivent les visiteurs en temps réel ; la salle entière répond aux déplacements',
+      "<strong>Systèmes évolutifs persistants</strong> — le contenu se modifie avec chaque groupe de visiteurs ; chaque visite confronte un état légèrement différent du système",
+      "<strong>Installations mécaniques interactives</strong> — dispositifs motorisés et CNC capables de mouvement autonome, de réponse au public ou de portage de comportements générés par IA",
+      "<strong>Expérience synchronisée double-espace</strong> — deux espaces physiques reliés en temps réel par réseau ; les visiteurs de chaque lieu influencent l'environnement de l'autre",
+    ],
+  },
+  en: {
+    s1tagline:  'IMMERSIVE HYBRID\nREALITIES STUDIO',
+    s1subtitle: 'Reshaping Public Spaces through Imagination',
+    sIntroText: 'VITROSCAPE is a creative studio founded by two alumni of <em>Le Fresnoy – Studio national des arts contemporains</em>. We are a team of <strong>\u201cdigital dream makers,\u201d</strong> dedicated to pushing the boundaries of imagination through cutting-edge technology and exploring new narrative and spatial frontiers in the realm of digital media.\n\nUnlike companies focused on a single hardware device, VITROSCAPE\u2019s strength lies in an approach rooted in <strong>narrative-driven imagination</strong>. Depending on client needs and storytelling objectives, we fluidly mobilize <em>VR, AR, AI generation, interactive projection,</em> and other media to create immersive experiences that are at once <strong>playful, aesthetic, and educational</strong>.',
+    s1contact: 'invitromedialab@gmail.com · invitromedialab.com',
+    s2title:   '— Content & Image —',
+    s2caps:    'Multisensory Immersive · Data Visualization · AI & Procedural',
+    s3title:   '— Interactive Installations & Systems —',
+    s3caps:    'Spatial Sensing · Evolving Systems · Mechanical · Dual-Space',
+    s2panelTitle: 'Content & Image',
+    s3panelTitle: 'Interactive Installations & Systems',
+    s2bullets: [
+      '<strong>Multisensory immersive experiences & narrative</strong> — spatial audio, scent diffusion, ambient climate control, holographic screens — usable independently or combined into full narrative environments',
+      '<strong>Scientific data visualization</strong> — translating research into 3D animation, AR digital overlays, or walk-in VR spaces',
+      '<strong>AI content production & procedural visuals</strong> — AI-generated material, procedural animation, VFX and motion capture — full production capability from concept to delivery',
+    ],
+    s3bullets: [
+      '<strong>Spatial tracking & interactive sensing</strong> — thermal cameras and sensors track audience positions in real time; the entire venue responds to crowd movement',
+      '<strong>Persistently evolving interactive systems</strong> — content shifts with each group of visitors; every visit encounters a slightly different system state',
+      '<strong>Mechanical interactive installations</strong> — motor- and CNC-driven devices capable of autonomous movement, audience response, or carrying AI-generated behavior logic',
+      "<strong>Dual-space real-time synchronization</strong> — two physical spaces linked live over network; visitors in each location influence the other's environment",
+    ],
+  },
+}
+
+// 0–8 → S2,  9–11 → S3
+const PROJECTS = [
+  { zh:{title:'Desert Star',sub:'互动装置 · 投影映射 · Le Fresnoy', desc:'可同时容纳约30名观众的实时交互剧场。多组投影融合覆盖展厅地面和墙面，由游戏引擎统一调度叙事流程与实时交互，内部运行粒子模拟与自定义着色器算法。全息屏幕上部署了可实时响应观众的交互内容。'}, fr:{title:'Desert Star',sub:'Installation interactive · Le Fresnoy', desc:"Théâtre interactif en temps réel accueillant jusqu'à 30 spectateurs. Plusieurs projections fusionnées couvrent le sol et les murs de la salle, pilotées par un moteur de jeu qui orchestre la narration et l'interaction. Simulations de particules et shaders personnalisés tournent en interne. Des contenus interactifs répondant en temps réel au public sont déployés sur écran holographique."}, en:{title:'Desert Star',sub:'Interactive installation · Le Fresnoy', desc:'Real-time interactive theatre accommodating up to 30 visitors simultaneously. Multiple blended projections cover the floor and walls, orchestrated by a game engine managing both narrative flow and live interaction, with particle simulation and custom shader algorithms running internally. Interactive content responding to the audience in real time is deployed on holographic screens.'}, isVideo:true,  src:'assets/videos/desertstar_clip.mp4' },
+  { zh:{title:'Gongpyeong Historic Sites Museum',sub:'Video mapping · Seoul · 2026', desc:'为博物馆制作了两段投影动画，呈现首尔的建筑演变历史。以真实历史地理数据为基础，运用程序化动画技术，还原了1600年至2025年间首尔城市形态的变化过程。'}, fr:{title:'Gongpyeong Historic Sites Museum',sub:'Video mapping · Séoul · 2026', desc:"Deux animations de projection mapping réalisées pour le musée, illustrant l'évolution architecturale de Séoul. À partir de données géographiques historiques réelles, l'animation procédurale restitue la morphologie urbaine de Séoul de 1600 à 2025."}, en:{title:'Gongpyeong Historic Sites Museum',sub:'Video mapping · Seoul · 2026', desc:"Two projection mapping animations created for the museum, presenting Seoul's architectural evolution. Based on real historical geographic data, procedural animation reconstructs the city's urban form from 1600 to 2025."}, isVideo:false, src:'assets/images/web/gongpyeong_1.webp' },
+  { zh:{title:'Chinese Academy of Sciences',sub:'3D scientific visualization · Shenzhen', desc:'以真实蛋白质分子结构数据为基础，使用程序化手段制作三维动画，将微观合成生物学过程可视化。同时承担了该研究所展厅的空间视觉设计，将其研究成果转化为面向公众的展示内容。'}, fr:{title:'Académie des sciences de Chine',sub:'Visualisation 3D · Shenzhen', desc:"À partir de données réelles de structures moléculaires de protéines, des animations 3D procédurales visualisent les processus de biologie synthétique à l'échelle microscopique. Nous avons également assuré la conception visuelle spatiale du hall d'exposition de l'institut, traduisant ses résultats de recherche en contenus accessibles au grand public."}, en:{title:'Chinese Academy of Sciences',sub:'3D scientific visualization · Shenzhen', desc:'Using real protein molecular structure data, procedural 3D animation visualizes microscopic synthetic biology processes. We also handled the spatial visual design of the institute exhibition hall, translating research findings into public-facing content.'}, isVideo:false, src:'assets/images/web/isynbio.webp' },
+  { zh:{title:'Sunlight Trapped Under the Earth',sub:'CGI电影 · Xiyue Hu & Xing Xiao · 2026', desc:'我们自主开发的短片，制作中运用了动作捕捉技术与流体烟雾模拟，全片在实时渲染引擎中完成制作。'}, fr:{title:'Sunlight Trapped Under the Earth',sub:'Film CGI · Xiyue Hu & Xing Xiao · 2026', desc:'Court métrage développé en interne, intégrant la capture de mouvement et la simulation de fluides et de fumée, entièrement réalisé dans un moteur de rendu temps réel.'}, en:{title:'Sunlight Trapped Under the Earth',sub:'CGI film · Xiyue Hu & Xing Xiao · 2026', desc:'An independently developed short film incorporating motion capture and fluid/smoke simulation, produced entirely within a real-time rendering engine.'}, isVideo:true,  src:'assets/videos/Sunlight_Trapped_Under_the_Earth_Clip.mp4' },
+  { zh:{title:'Standing at the Center of the Continental Shelf',sub:"VR · Musée d'Aquitaine · 2023–2024", desc:'与波尔多大学史前考古学团队合作的VR项目。以考古团队提供的洞穴壁画三维扫描数据为基础建立虚拟场景，并开发了一套允许观众在虚拟空间中自由绘画的交互系统。'}, fr:{title:'Standing at the Center of the Continental Shelf',sub:"VR · Musée d'Aquitaine · 2023–2024", desc:"Projet VR en collaboration avec l'équipe d'archéologie préhistorique de l'Université de Bordeaux. La scène virtuelle est construite à partir des données de scan 3D des peintures rupestres fournies par l'équipe archéologique. Un système interactif permettant aux visiteurs de peindre librement dans l'espace virtuel a été développé."}, en:{title:'Standing at the Center of the Continental Shelf',sub:"VR · Musée d'Aquitaine · 2023–2024", desc:'A VR project in collaboration with the prehistoric archaeology team at the University of Bordeaux. The virtual scene was built from 3D scan data of cave paintings provided by the archaeological team, with an interactive system developed to allow visitors to paint freely within the virtual space.'}, isVideo:false, src:'assets/images/web/Standing_at_the_Center_of_the_Continental_Shelf.webp' },
+  { zh:{title:'Of Dreams in the Dream of Another Mirror',sub:'VFX · Yunyi Zhu · Berlinale 2023', desc:'Yunyi Zhu执导的短片，入围2023年柏林电影节。我们负责其中的VFX与三维制作，技术手段包括实物三维扫描与点云重建，以及基于点云数据的程序化动画。'}, fr:{title:'Of Dreams in the Dream of Another Mirror',sub:'VFX · Yunyi Zhu · Berlinale 2023', desc:"Court métrage réalisé par Yunyi Zhu, sélectionné à la Berlinale 2023. Nous avons assuré la production VFX et 3D, combinant scan 3D d'objets réels, reconstruction en nuages de points et animation procédurale à partir de ces données."}, en:{title:'Of Dreams in the Dream of Another Mirror',sub:'VFX · Yunyi Zhu · Berlinale 2023', desc:'A short film directed by Yunyi Zhu, selected for the 2023 Berlinale. We handled the VFX and 3D production, using real-object 3D scanning, point cloud reconstruction, and procedural animation based on point cloud data.'}, isVideo:false, src:'assets/images/web/yunyi.webp' },
+  { zh:{title:'UKI',sub:'VFX · Shu Lea Cheang · 慕尼黑电影节 2023', desc:'Shu Lea Cheang执导的长片，曾于慕尼黑电影节展映。我们承担了虚拟拍摄部分的制作，在Unity引擎构建的虚拟环境中完成场景搭建与拍摄工作。'}, fr:{title:'UKI',sub:'VFX · Shu Lea Cheang · Munich 2023', desc:"Long métrage réalisé par Shu Lea Cheang, présenté au Festival international du film de Munich. Nous avons assuré la production des séquences de tournage virtuel, construisant les décors et réalisant les prises de vue dans un environnement virtuel développé sous Unity."}, en:{title:'UKI',sub:'VFX · Shu Lea Cheang · Munich Film Festival 2023', desc:'A feature film directed by Shu Lea Cheang, screened at the Munich International Film Festival. We handled the virtual production sequences, building the sets and shooting within a virtual environment constructed in Unity.'}, isVideo:false, src:'assets/images/web/UKI_1.webp' },
+  { zh:{title:'Jeu de Mondes',sub:'沉浸式VR · Bourges · 欧盟资助 · 2022', desc:'欧盟资助的VR大空间展览项目。我们以受邀艺术家和开发者身份参与，负责交互系统与着色器的开发，同时在项目框架内展示了我们自己的创作作品。'}, fr:{title:'Jeu de Mondes',sub:"VR · Château d'Eau, Bourges · UE · 2022", desc:"Projet d'exposition VR en grand espace financé par l'UE. Nous avons participé en tant qu'artistes invités et développeurs, en charge du développement des systèmes interactifs et des shaders, tout en présentant nos propres œuvres dans le cadre du projet."}, en:{title:'Jeu de Mondes',sub:"VR · Château d'Eau, Bourges · EU · 2022", desc:'An EU-funded large-space VR exhibition project. We participated as invited artists and developers, responsible for interactive system and shader development, while also presenting our own work within the project framework.'}, isVideo:false, src:'assets/images/web/Jeu_de_Mondes_1.webp' },
+  { zh:{title:'Virtual Therapia',sub:'VR医疗软件 · 医院 · 机构 · 企业', desc:'我们在项目中承担开发与技术美术工作，主要负责场景搭建与交互功能的开发，并对原有界面的视觉设计与交互逻辑进行了全面重制。'}, fr:{title:'Virtual Therapia',sub:'Logiciel VR médical · Hôpitaux', desc:"Nous avons assuré le développement et le travail de direction artistique technique, principalement responsables de la construction des scènes et du développement des fonctionnalités interactives, avec une refonte complète du design visuel et de la logique d'interaction de l'interface d'origine."}, en:{title:'Virtual Therapia',sub:'VR medical software · Hospitals', desc:'We handled development and technical art, primarily responsible for scene construction and interactive feature development, along with a complete redesign of the original interface visual design and interaction logic.'}, isVideo:false, src:'assets/images/web/VirtualTherapia.webp' },
+  { zh:{title:'Temporary Soul: Λ-7',sub:'机器人装置 · Le Fresnoy, Panorama 26 · 2024–2025', desc:'我们设计并制造了完整的物理机器人，编写了控制接口，使在虚拟环境中训练的强化学习神经网络能够直接驱动真实机器人执行对应动作。'}, fr:{title:'Temporary Soul: Λ-7',sub:'Installation robotique · Le Fresnoy, Panorama 26 · 2024–2025', desc:"Nous avons conçu et fabriqué un robot physique complet, et développé l'interface de contrôle permettant à un réseau de neurones entraîné par apprentissage par renforcement dans un environnement virtuel de piloter directement le robot réel pour exécuter les actions correspondantes."}, en:{title:'Temporary Soul: Λ-7',sub:'Robot installation · Le Fresnoy, Panorama 26 · 2024–2025', desc:'We designed and built the complete physical robot, and wrote the control interface enabling a reinforcement learning neural network trained in a virtual environment to directly drive the real robot to perform the corresponding actions.'}, isVideo:true,  src:'assets/videos/lambda-7.mp4' },
+  { zh:{title:'Temporary Soul',sub:'AI互动游戏 · 强化学习驱动', desc:'我们自研项目，采用强化学习训练神经网络，使游戏角色的运动逻辑完全由网络输出驱动，并在物理引擎中实现了与之配套的游戏玩法系统。'}, fr:{title:'Temporary Soul',sub:'Jeu IA · Apprentissage par renforcement', desc:"Projet interne : un réseau de neurones entraîné par apprentissage par renforcement pilote entièrement la logique de mouvement du personnage de jeu, avec un système de gameplay complémentaire implémenté dans un moteur physique."}, en:{title:'Temporary Soul',sub:'AI interactive game · Reinforcement learning', desc:'An in-house project in which a reinforcement learning neural network fully drives the game character movement logic, with a complementary gameplay system implemented in a physics engine.'}, isVideo:true,  src:'assets/videos/TemporarySoul.mp4' },
+  { zh:{title:'They dig in suitable soil',sub:'混合多媒体游戏 · CAPC博物馆，法国', desc:'负责开发PC端游戏部分，包括视觉特效与核心代码，实现了实体卡牌与数字游戏之间的实时交互逻辑。'}, fr:{title:'They dig in suitable soil',sub:'Jeu hybride · Musée CAPC, France', desc:"Développement de la partie jeu PC, incluant les effets visuels et le code principal, avec implémentation de la logique d'interaction en temps réel entre les cartes physiques et le jeu numérique."}, en:{title:'They dig in suitable soil',sub:'Hybrid game · CAPC Museum, France', desc:'Responsible for developing the PC game component, including visual effects and core code, implementing the real-time interaction logic between physical cards and the digital game.'}, isVideo:false, src:'assets/images/web/they_dig_in_suitable_soil_the_mycological_2.webp' },
+  { zh:{title:'',sub:'',desc:''}, fr:{title:'',sub:'',desc:''}, en:{title:'',sub:'',desc:''}, isVideo:false, src:'' },
+  { zh:{title:'',sub:'',desc:''}, fr:{title:'',sub:'',desc:''}, en:{title:'',sub:'',desc:''}, isVideo:false, src:'' },
+]
+
+const N        = PROJECTS.length
+const S2_COUNT = 11
+const S3_COUNT = 3
+
+// ═══════════════════════════════════════════════════
+//  POPULATE TEXT
+// ═══════════════════════════════════════════════════
+let currentLang = 'zh'
+
+function renderText(lang) {
+  const d = UI[lang]
+  document.getElementById('s1-tagline').innerHTML    = d.s1tagline.replace('\n', '<br>')
+  document.getElementById('s1-subtitle').textContent = d.s1subtitle
+  document.getElementById('s-intro-text').innerHTML  = d.sIntroText.split('\n\n').map(p => `<p>${p}</p>`).join('')
+  // Section panel bullets are populated dynamically in updateSectionPanel()
+}
+
+// ═══════════════════════════════════════════════════
+//  KALI BACKGROUND PARAMETERS — edit here or via panel
+// ═══════════════════════════════════════════════════
+const KALI = {
+  animate:   false,
+  timeScale: 1.17,   // animation speed
+  camT:      0,      // camera orbit position (active when !animate; try 0–400)
+  mph:       0.02,   // 0→1: gem mode → dark mode
+  // Fractal fold vectors
+  param0:    [1.237, 0.449, 0.413],  // animated each frame when animate=true
+  param1:    [1.122, 2.5,   2.5  ],  // second endpoint of param mix
+  // Detail refinement loop
+  paramFix:  [1.122, 0.776, 0.633],  // shape vector of the 5-step detail pass
+  refineAmt: 0,                       // self-fold strength in detail pass
+  distInit:  17.6,                    // initial march distance (density/thickness)
+  // Colour
+  gemBright: 1.9,                     // gem-mode brightness multiplier
+  darkColor: [1.0, 1.0, 1.0],        // base colour in dark mode
+  accu0:     30000,                   // colour weight: orbital trap (av)
+  accu1:     19500,                   // colour weight: ray position (p.xyz)
+  scrollCam: 0.3,                     // scroll contribution to camera orbit
+  invert:     1.0,
+  hueShift:   2.9,
+  saturation: 0.5,
+  brightness: 1.0,
+  contrast:   1.0,
+  gamma:      1.0,
+  // Edge transition
+  edgePos:      0.195,  // fade centre (0=bottom, 0.5=mid-screen)
+  edgeWidth:    0.041,  // softness: wider = smoother
+  edgeStrength: 0.257,  // irregularity driven by fractal colour
+  edgeInvert:   0.0,    // 1.0 = flip which side is transparent
+}
+let kaliClock = 0
+
+// ═══════════════════════════════════════════════════
+//  LOGO PARAMETERS — edit here to tune
+// ═══════════════════════════════════════════════════
+const LOGO = {
+  rotDir:    -1,      // rotation direction: 1 or -1
+  rotRange:   0.15,   // max rotation (× Math.PI)
+  rotSmooth:  0.05,   // lerp speed
+  width:      22,     // logo world-units width
+  camMargin:  2.2,    // camera distance multiplier
+  posY:       2.1,    // logo vertical offset
+  extDepth:   0.0,    // extrude depth
+  bevelSize:  0.6,    // bevel size
+  bevelThick: 1.2,    // bevel thickness
+  bevelSegs:  4,      // bevel segments
+}
+
+// ═══════════════════════════════════════════════════
+//  LOGO — extruded 3D SVG mesh
+// ═══════════════════════════════════════════════════
+const logoCanvas   = document.getElementById('dna-canvas')
+const logoRenderer = new THREE.WebGLRenderer({ canvas: logoCanvas, antialias: true, alpha: true })
+logoRenderer.setPixelRatio(Math.min(devicePixelRatio, 2))
+const logoScene = new THREE.Scene()
+const logoCam   = new THREE.PerspectiveCamera(38, 1, 0.1, 2000)
+logoCam.position.set(0, 0, 100)
+logoCam.lookAt(0, 0, 0)
+
+const logoGroup = new THREE.Group()
+logoGroup.position.y = LOGO.posY
+logoScene.add(logoGroup)
+let logoLoaded = false
+
+// (particle arrays removed — using extruded mesh)
+
+// kali canvas used as background texture for glass refraction in logo renderer
+// (created here; kaliCanvas is defined earlier as document.getElementById('kali-canvas'))
+const kaliTex = new THREE.CanvasTexture(document.getElementById('kali-canvas'))
+
+const logoMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uBg:        { value: kaliTex },
+    uColor:     { value: new THREE.Color(0.15, 0.12, 0.18) }, // metal tint (warm silver)
+    uRoughness: { value: 0.01 },   // 0=mirror polish, 1=fully matte
+    uIri:       { value: 1.2  },   // iridescence intensity at edges
+    uEnvBright: { value: 1.4  },   // overall brightness multiplier
+    uReflStr:   { value: 0.8  },   // reflection UV distortion strength
+  },
+  vertexShader:   LOGO_VERT,
+  fragmentShader: LOGO_FRAG,
+  side: THREE.DoubleSide,
+})
+
+new SVGLoader().load('assets/svg/VITROSCAPE_vector.svg', data => {
+  const meshGroup = new THREE.Group()
+
+  for (const path of data.paths) {
+    for (const shape of SVGLoader.createShapes(path)) {
+      const geo = new THREE.ExtrudeGeometry(shape, {
+        depth:          LOGO.extDepth,
+        bevelEnabled:   true,
+        bevelThickness: LOGO.bevelThick,
+        bevelSize:      LOGO.bevelSize,
+        bevelSegments:  LOGO.bevelSegs,
+      })
+      meshGroup.add(new THREE.Mesh(geo, logoMat))
+    }
+  }
+
+  // Centre + scale to LOGO.width; flip Y (SVG is Y-down)
+  const box    = new THREE.Box3().setFromObject(meshGroup)
+  const center = box.getCenter(new THREE.Vector3())
+  const size   = box.getSize(new THREE.Vector3())
+  const sf     = LOGO.width / size.x
+  meshGroup.position.set(-center.x * sf, center.y * sf, 0)
+  meshGroup.scale.set(sf, -sf, sf)
+  logoGroup.add(meshGroup)
+
+  // Fit camera
+  const fovRad = logoCam.fov * Math.PI / 180
+  const aspect = window.innerWidth / window.innerHeight || 1.78
+  const hFov   = 2 * Math.atan(Math.tan(fovRad / 2) * aspect)
+  logoCam.position.z = (LOGO.width * 0.5) / Math.tan(hFov / 2) * LOGO.camMargin
+  logoCam.updateProjectionMatrix()
+
+  logoLoaded = true
+})
+
+// ═══════════════════════════════════════════════════
+//  KALI BACKGROUND (fullscreen fractal for S1)
+// ═══════════════════════════════════════════════════
+const kaliCanvas   = document.getElementById('kali-canvas')
+const kaliRenderer = new THREE.WebGLRenderer({ canvas: kaliCanvas, antialias: false, alpha: true })
+kaliRenderer.setPixelRatio(Math.min(devicePixelRatio, 1))
+const kaliScene = new THREE.Scene()
+const kaliCam   = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+
+const kaliMat = new THREE.ShaderMaterial({
+  transparent: true,
+  uniforms: {
+    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    uTime:       { value: KALI.camT   },
+    uMph:        { value: KALI.mph    },
+    uScroll:     { value: 0.0         },
+    uParam0:     { value: new THREE.Vector3(...KALI.param0)   },
+    uParam1:     { value: new THREE.Vector3(...KALI.param1)   },
+    uParamFix:   { value: new THREE.Vector3(...KALI.paramFix) },
+    uRefineAmt:  { value: KALI.refineAmt },
+    uDistInit:   { value: KALI.distInit  },
+    uGemBright:  { value: KALI.gemBright },
+    uDarkColor:  { value: new THREE.Vector3(...KALI.darkColor) },
+    uAccu0:      { value: KALI.accu0     },
+    uAccu1:      { value: KALI.accu1     },
+    uScrollCam:  { value: KALI.scrollCam },
+    uInvert:     { value: KALI.invert     },
+      uHueShift:   { value: KALI.hueShift   },
+      uSaturation: { value: KALI.saturation },
+      uBrightness:   { value: KALI.brightness   },
+      uContrast:     { value: KALI.contrast     },
+      uGamma:        { value: KALI.gamma        },
+      uEdgePos:      { value: KALI.edgePos      },
+      uEdgeWidth:    { value: KALI.edgeWidth    },
+      uEdgeStrength: { value: KALI.edgeStrength },
+      uEdgeInvert:   { value: KALI.edgeInvert   },
+  },
+  vertexShader:   KALI_VERT,
+  fragmentShader: KALI_FRAG,
+})
+kaliScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), kaliMat))
+
+// ═══════════════════════════════════════════════════
+//  CARD HELIX (full screen, fixed behind S2/S3)
+// ═══════════════════════════════════════════════════
+const helixCanvas   = document.getElementById('helix-canvas')
+const helixRenderer = new THREE.WebGLRenderer({ canvas: helixCanvas, antialias: true })
+helixRenderer.setPixelRatio(Math.min(devicePixelRatio, 2))
+helixRenderer.outputColorSpace = THREE.SRGBColorSpace
+const helixScene = new THREE.Scene()
+helixScene.background = new THREE.Color(0xffffff)
+helixScene.fog = new THREE.Fog(0xffffff, 4.5, 11.0)
+const helixCam = new THREE.PerspectiveCamera(40, 1, 0.1, 50)
+helixCam.position.set(0, 0, 7.0)
+helixCam.lookAt(0, 0, 0)
+
+
+const group = new THREE.Group()
+helixScene.add(group)
+
+const R_H        = 2.8
+const ANGLE_STEP = Math.PI / 2.5
+const STEP_Y     = 1.0
+const CARD_W     = 2.6
+const CARD_H     = 1.6
+
+PROJECTS.forEach((proj, i) => {
+  const theta  = i * ANGLE_STEP
+  const localY = (i - (N - 1) / 2) * STEP_Y
+  let texture = null
+  if (proj.src !== '') {
+    if (proj.isVideo) {
+      const vid = document.createElement('video')
+      vid.src = proj.src; vid.muted = true; vid.loop = true
+      vid.playsInline = true; vid.setAttribute('playsinline', '')
+      vid.play().catch(() => {})
+      texture = new THREE.VideoTexture(vid)
+      texture.minFilter = THREE.LinearFilter
+      texture.colorSpace = THREE.SRGBColorSpace
+    } else {
+      texture = new THREE.TextureLoader().load(proj.src)
+      texture.colorSpace = THREE.SRGBColorSpace
+    }
+  }
+  const geo      = new THREE.PlaneGeometry(CARD_W, CARD_H, 22, 14)
+  const posAttr  = geo.attributes.position
+  const flatPos  = new Float32Array(posAttr.array)   // copy of original flat verts
+  const curvPos  = new Float32Array(posAttr.count * 3)
+  // Curved: each vertex wraps around cylinder of radius R_H centred behind card
+  for (let v = 0; v < posAttr.count; v++) {
+    const dx = flatPos[v * 3]
+    curvPos[v * 3]     = R_H * Math.sin(dx / R_H)
+    curvPos[v * 3 + 1] = flatPos[v * 3 + 1]
+    curvPos[v * 3 + 2] = R_H * (Math.cos(dx / R_H) - 1)   // edges pull back
+  }
+  const mesh = new THREE.Mesh(
+    geo,
+    texture
+      ? new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
+      : new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide })
+  )
+  mesh.position.set(R_H * Math.sin(theta), localY, R_H * Math.cos(theta))
+  mesh.rotation.y = theta
+  group.add(mesh)
+  proj._mesh    = mesh
+  proj._theta   = theta
+  proj._posAttr = posAttr
+  proj._flatPos = flatPos
+  proj._curvPos = curvPos
+  proj._ripple  = null   // { t, cx, cy, onDone }
+})
+
+// ═══════════════════════════════════════════════════
+//  PARTICLES — structured noise threads inside the helix
+// ═══════════════════════════════════════════════════
+const P_COUNT   = 6420
+const THREADS   = 3
+const PER_T     = Math.floor(P_COUNT / THREADS)
+const HSPAN     = N * STEP_Y * 1.5
+
+// pBase: [spiralAngle, t(0→1 along height), baseRadius]
+const pBase     = new Float32Array(P_COUNT * 3)
+const pNoiseOff = new Float32Array(P_COUNT * 3)
+const pPosArr   = new Float32Array(P_COUNT * 3)
+const pColArr   = new Float32Array(P_COUNT * 3)
+
+for (let i = 0; i < P_COUNT; i++) {
+  const thread = i % THREADS
+  const j      = Math.floor(i / THREADS)
+  const t      = j / PER_T                             // 0 → 1 along height
+  const spiral = t * Math.PI * 10 + (thread / THREADS) * Math.PI * 2
+  const baseR  = 0.15 + 0.55 * (0.5 + 0.5 * Math.sin(t * Math.PI * 4 + thread))
+  pBase[i * 3]     = spiral
+  pBase[i * 3 + 1] = t
+  pBase[i * 3 + 2] = baseR
+  pNoiseOff[i * 3]     = Math.random() * Math.PI * 2
+  pNoiseOff[i * 3 + 1] = Math.random() * Math.PI * 2
+  pNoiseOff[i * 3 + 2] = Math.random() * Math.PI * 2
+  // gray: lighter toward top of thread, random variation
+  const g = 0.20 + t * 0.45 + Math.random() * 0.20
+  pColArr[i * 3] = pColArr[i * 3 + 1] = pColArr[i * 3 + 2] = Math.min(g, 0.88)
+}
+
+const pGeo     = new THREE.BufferGeometry()
+const pPosAttr = new THREE.BufferAttribute(pPosArr, 3)
+pGeo.setAttribute('position', pPosAttr)
+pGeo.setAttribute('color',    new THREE.BufferAttribute(pColArr, 3))
+
+const pMat = new THREE.PointsMaterial({
+  size: 0.05,
+  vertexColors: true,
+  sizeAttenuation: true,
+  transparent: true,
+  opacity: 1.0,
+  depthWrite: false,
+})
+
+const particles = new THREE.Points(pGeo, pMat)
+group.add(particles)   // follows scroll rotation + translation
+
+// ═══════════════════════════════════════════════════
+//  AUTO-SCROLL PARAMETERS — edit here to tune
+// ═══════════════════════════════════════════════════
+const AUTO = {
+  enabled:    false,
+  speedS1:    1.5,    // px/frame through landing section (S1, no pauses)
+  speedWorks: 0.7,    // px/frame while advancing between cards (S2 / S3)
+  pauseMs:    2800,   // ms to dwell at each card before moving on
+}
+let autoPauseUntil = 0
+let autoLastCard   = -99
+
+// ═══════════════════════════════════════════════════
+//  SCROLL
+// ═══════════════════════════════════════════════════
+let rawScroll  = 0
+let lerpScroll = 0
+let lerpCard    = -0.7  // = targetCard(0), correct initial helix position
+let shownIdx   = -1
+
+const PAGE_H = window.innerHeight
+const TOTAL  = 4 * PAGE_H   // S1 + S-intro + S2 works + S3 works
+
+// Sections: S1=0, S-intro=1, S2=2, S3=3 (each at i*PAGE_H)
+function sectionY(i, dp) {
+  let y = i * PAGE_H - dp
+  if (y < -PAGE_H)    y += TOTAL
+  if (y > 3 * PAGE_H) y -= TOTAL
+  return y
+}
+
+function targetCard(dp) {
+  if (dp < PAGE_H) {
+    const t = dp / PAGE_H
+    return -0.7 * (1 - t)       // approach card 0 as leaving S1
+  }
+  if (dp < 2 * PAGE_H) return 0  // hold at card 0 during s-intro
+  if (dp < 3 * PAGE_H) return (dp - 2*PAGE_H) / PAGE_H * (S2_COUNT - 1)
+  const t = (dp - 3 * PAGE_H) / PAGE_H
+  return S2_COUNT + t * (S3_COUNT - 1)
+}
+
+let lastWheelMs = 0
+window.addEventListener('wheel', e => {
+  e.preventDefault()
+  const dpNow = ((lerpScroll % TOTAL) + TOTAL) % TOTAL
+  const mult  = dpNow > PAGE_H * 1.9 ? 0.36 : 0.62
+  rawScroll  += e.deltaY * mult
+  lastWheelMs = performance.now()
+}, { passive: false })
+
+let t0 = 0
+window.addEventListener('touchstart', e => { t0 = e.touches[0].clientY }, { passive: true })
+window.addEventListener('touchmove', e => {
+  e.preventDefault()
+  rawScroll += (t0 - e.touches[0].clientY) * 1.8
+  t0 = e.touches[0].clientY
+}, { passive: false })
+
+document.getElementById('scroll-cue').addEventListener('click', () => { rawScroll += PAGE_H })
+
+const s1Body = document.getElementById('s1-body')
+
+// ═══════════════════════════════════════════════════
+//  PROJECT INFO
+// ═══════════════════════════════════════════════════
+const titleEl      = document.getElementById('project-title')
+const subEl        = document.getElementById('project-sub')
+const descEl       = document.getElementById('project-desc')
+const cntEl        = document.getElementById('counter')
+const infoEl       = document.getElementById('project-info')
+const panelEl        = document.getElementById('section-panel')
+const panelInnerEl   = document.getElementById('section-panel-inner')
+const panelTitleEl   = document.getElementById('section-panel-title')
+const panelBulletsEl = document.getElementById('section-panel-bullets')
+
+// Panel switches to S3 content starting from card index 7 (Jeu de Mondes)
+const PANEL_S3_FROM = 7
+
+let shownSection     = -1   // -1=hidden, 2=S2 bullets, 3=S3 bullets
+let panelFadeTimer   = null
+
+function updateSectionPanel(cardIdx) {
+  const section = cardIdx >= PANEL_S3_FROM ? 3 : 2
+  if (section === shownSection) return
+
+  // Set immediately so animate() doesn't re-trigger every frame
+  shownSection = section
+
+  // Fade inner content out, swap, fade in
+  panelInnerEl.style.opacity = '0'
+  clearTimeout(panelFadeTimer)
+  panelFadeTimer = setTimeout(() => {
+    const d       = UI[currentLang]
+    const title   = section === 2 ? d.s2panelTitle : d.s3panelTitle
+    const bullets = section === 2 ? d.s2bullets    : d.s3bullets
+    panelTitleEl.textContent = title
+    panelBulletsEl.innerHTML = bullets.map(b => `<p>${b}</p>`).join('')
+    panelInnerEl.style.opacity = '1'
+  }, 300)
+}
+
+function showInfo(idx) {
+  idx = Math.max(0, Math.min(N - 1, Math.round(idx)))
+  if (idx === shownIdx) return
+  shownIdx = idx
+  const d = PROJECTS[idx][currentLang]
+  titleEl.style.color = 'rgba(0,0,0,0)'
+  subEl.style.color   = 'rgba(80,80,80,0)'
+  descEl.style.color  = 'rgba(50,50,50,0)'
+  setTimeout(() => {
+    titleEl.textContent = d.title
+    subEl.textContent   = d.sub
+    descEl.textContent  = d.desc || ''
+    titleEl.style.color = 'rgba(0,0,0,1)'
+    subEl.style.color   = 'rgba(80,80,80,1)'
+    descEl.style.color  = 'rgba(50,50,50,1)'
+  }, 140)
+}
+
+// ═══════════════════════════════════════════════════
+//  LANGUAGE
+// ═══════════════════════════════════════════════════
+document.querySelectorAll('#lang-nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#lang-nav button').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    currentLang = btn.dataset.lang
+    renderText(currentLang)
+    shownIdx = -1
+    shownSection = -1
+    showInfo(Math.round(lerpCard))
+    updateSectionPanel(Math.round(lerpCard))
+  })
+})
+
+// ═══════════════════════════════════════════════════
+//  RESIZE
+// ═══════════════════════════════════════════════════
+function resize() {
+  const s1 = document.getElementById('s1')
+  logoRenderer.setSize(s1.clientWidth, s1.clientHeight)
+  logoCam.aspect = s1.clientWidth / s1.clientHeight
+  logoCam.updateProjectionMatrix()
+
+  helixRenderer.setSize(window.innerWidth, window.innerHeight)
+  helixCam.aspect = window.innerWidth / window.innerHeight
+  helixCam.updateProjectionMatrix()
+
+  const kW = Math.round(window.innerWidth  * 1.16)
+  const kH = Math.round(window.innerHeight * 1.16)
+  kaliRenderer.setSize(kW, kH)
+  kaliMat.uniforms.uResolution.value.set(kW, kH)
+}
+window.addEventListener('resize', resize)
+
+// ═══════════════════════════════════════════════════
+//  ANIMATION
+// ═══════════════════════════════════════════════════
+const s1El     = document.getElementById('s1')
+const sIntroEl = document.getElementById('s-intro')
+const s2El     = document.getElementById('s2')
+const s3El     = document.getElementById('s3')
+let frame  = 0
+
+function animate() {
+  requestAnimationFrame(animate)
+  frame++
+
+  lerpScroll += (rawScroll - lerpScroll) * 0.07
+  const dp = ((lerpScroll % TOTAL) + TOTAL) % TOTAL
+
+  // Position sections
+  const s1Yt = sectionY(0, dp)
+  s1El.style.transform       = `translateY(${s1Yt}px)`
+  logoCanvas.style.transform  = `translateY(${s1Yt}px)`
+  sIntroEl.style.transform   = `translateY(${sectionY(1, dp)}px)`
+  s2El.style.transform       = `translateY(${sectionY(2, dp)}px)`
+  s3El.style.transform       = `translateY(${sectionY(3, dp)}px)`
+
+  // Helix visibility: fade in as entering works sections (S2=2*PAGE_H)
+  let workA
+  const FADE = PAGE_H
+  if (dp < FADE) {
+    workA = dp / FADE
+  } else if (dp < TOTAL - FADE) {
+    workA = 1
+  } else {
+    workA = (TOTAL - dp) / FADE
+  }
+  workA = Math.max(0, Math.min(1, workA))
+
+  helixCanvas.style.opacity = workA
+
+  // Card index lerp — instant reset if gap is too large (loop reset, invisible under S1)
+  const tc   = targetCard(dp)
+  const diff = tc - lerpCard
+  if (Math.abs(diff) > 5) {
+    lerpCard    = tc   // instant, hidden under S1
+    shownIdx    = -1
+    shownSection = -1
+  } else {
+    lerpCard += diff * 0.07
+  }
+  const angle = lerpCard * ANGLE_STEP
+
+  // ── Auto-scroll ──
+  if (AUTO.enabled) {
+    const now     = performance.now()
+    const inWorks = dp > PAGE_H * 1.9
+
+    if (inWorks) {
+      const nearCard = Math.round(lerpCard)
+      const proj     = PROJECTS[nearCard]
+      const isReal   = proj && proj.zh.title !== ''   // skip empty placeholders
+
+      if (isReal && nearCard !== autoLastCard && Math.abs(lerpCard - nearCard) < 0.12) {
+        autoLastCard   = nearCard
+        autoPauseUntil = now + AUTO.pauseMs
+        // Snap rawScroll to the exact dp that centers this card,
+        // so lerpScroll converges to a clean integer card position
+        let snapDp
+        if (nearCard < S2_COUNT) {
+          const t = Math.min(nearCard / (S2_COUNT - 1), 0.9999)
+          snapDp = 2 * PAGE_H + t * PAGE_H
+        } else {
+          snapDp = 3 * PAGE_H + (nearCard - S2_COUNT) / (S3_COUNT - 1) * PAGE_H
+        }
+        const curFrac = ((rawScroll % TOTAL) + TOTAL) % TOTAL
+        rawScroll = rawScroll - curFrac + snapDp
+      }
+      if (now > autoPauseUntil) rawScroll += AUTO.speedWorks
+    } else {
+      rawScroll += AUTO.speedS1
+    }
+  }
+
+  // ── Idle snap-to-card (damping attraction) ──
+  if (!AUTO.enabled && dp > PAGE_H * 1.9) {
+    const now2 = performance.now()
+    if (now2 - lastWheelMs > 320) {
+      const nearCard = Math.round(lerpCard)
+      if (Math.abs(lerpCard - nearCard) < 0.45) {
+        let targetDp
+        if (nearCard < S2_COUNT) {
+          targetDp = 2 * PAGE_H + Math.min(nearCard / (S2_COUNT - 1), 0.9999) * PAGE_H
+        } else {
+          targetDp = 3 * PAGE_H + (nearCard - S2_COUNT) / (S3_COUNT - 1) * PAGE_H
+        }
+        const curFrac = ((rawScroll % TOTAL) + TOTAL) % TOTAL
+        rawScroll += (targetDp - curFrac) * 0.06
+      }
+    }
+  }
+
+  group.rotation.y = -angle
+  group.position.y = -(lerpCard - (N - 1) / 2) * STEP_Y
+
+  // Per-card: blend curl ↔ face-camera + vertex curve morph
+  const TWO_PI = Math.PI * 2
+  PROJECTS.forEach(proj => {
+    let phi = proj._theta - angle
+    phi = ((phi % TWO_PI) + TWO_PI) % TWO_PI
+    if (phi > Math.PI) phi -= TWO_PI
+    const blend = Math.max(0, Math.cos(phi)) ** 2
+    proj._mesh.rotation.y  = proj._theta * (1 - blend) + angle * blend
+    proj._mesh.scale.setScalar(0.60 + 0.55 * blend)
+    // Morph vertices: flat when facing camera, curved when turning away
+    const cb  = 1 - blend             // 0=flat, 1=fully curved
+    const fp  = proj._flatPos
+    const cp  = proj._curvPos
+    const pa  = proj._posAttr
+    const arr = pa.array
+    for (let v = 0; v < pa.count; v++) {
+      const v3 = v * 3
+      arr[v3]     = fp[v3]     + (cp[v3]     - fp[v3])     * cb
+      arr[v3 + 2] = fp[v3 + 2] + (cp[v3 + 2] - fp[v3 + 2]) * cb
+    }
+
+    // Ripple wave: radial sine that decays with distance and time
+    if (proj._ripple) {
+      const rp = proj._ripple
+      rp.t += 0.06   // ~0.78 per second → full wave ~1.6 s / 0.78 ≈ 2 s total
+      for (let v = 0; v < pa.count; v++) {
+        const v3   = v * 3
+        const dx   = fp[v3]     - rp.cx
+        const dy   = fp[v3 + 1] - rp.cy
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const wave = Math.sin(dist * 5.5 - rp.t * 4.2)
+                   * Math.exp(-dist * 1.4 - rp.t * 1.6)
+                   * 0.60 * blend          // scale by blend: fades when card turns away
+        arr[v3 + 2] += wave
+      }
+      if (rp.t >= 1.7 && rp.onDone) { rp.onDone(); proj._ripple = null }
+    }
+
+    pa.needsUpdate = true
+  })
+
+  showInfo(lerpCard)
+  updateSectionPanel(Math.round(lerpCard))
+
+  // Update particles — noise deforms the spiral threads
+  const pt = frame * 0.006
+  for (let i = 0; i < P_COUNT; i++) {
+    const sa = pBase[i * 3]          // base spiral angle
+    const t  = pBase[i * 3 + 1]      // 0→1 along height
+    const br = pBase[i * 3 + 2]      // base radius
+    // Slow time-varying twist of spiral angle
+    const twistAngle = sa + pt * 0.18 + 0.35 * Math.sin(pt * 0.4 + pNoiseOff[i * 3 + 2])
+    // Noise breathes the radius in/out
+    const r  = br + 0.22 * Math.sin(pt * 0.9 + pNoiseOff[i * 3] + t * 3.0)
+    // Height: fixed relative to group, small vertical wobble from noise
+    const y  = (t - 0.5) * HSPAN + 0.18 * Math.sin(pt * 0.7 + pNoiseOff[i * 3 + 1] + t * 2.0)
+    pPosArr[i * 3]     = r * Math.cos(twistAngle)
+    pPosArr[i * 3 + 1] = y
+    pPosArr[i * 3 + 2] = r * Math.sin(twistAngle)
+  }
+  pPosAttr.needsUpdate = true
+
+  // Logo: rotation + particle update
+  const rotT = Math.max(-1, Math.min(1, -s1Yt / PAGE_H))  // -1=came from below, 0=centred, 1=gone up
+  if (logoLoaded) {
+    const rotTarget = rotT * Math.PI * LOGO.rotRange * LOGO.rotDir
+    logoGroup.rotation.y += (rotTarget - logoGroup.rotation.y) * LOGO.rotSmooth
+  }
+  // Kali background — moves with S1 so the hard section edge is preserved
+  const s1Scroll = dp / PAGE_H
+  if (KALI.animate) kaliClock += KALI.timeScale / 60
+  const kaliT = KALI.camT + kaliClock
+  // Animate param0 from original time-based formula (JS side, not GLSL)
+  if (KALI.animate) {
+    KALI.param0[0] = 1.2 + 0.4 * Math.sin(kaliT/6.13 - 0.4) * Math.min(1, (kaliT - 70) / 10)
+    KALI.param0[2] = 0.09 + 0.8 * Math.sin(kaliT / 4)
+  }
+  kaliMat.uniforms.uTime.value     = kaliT
+  kaliMat.uniforms.uMph.value      = KALI.mph
+  let uScrollVal = dp / PAGE_H                         // 0 at S1 center, increases downward
+  if (uScrollVal > TOTAL / PAGE_H / 2) uScrollVal -= TOTAL / PAGE_H  // fold: upper half = negative
+  kaliMat.uniforms.uScroll.value = uScrollVal
+  kaliMat.uniforms.uParam0.value.fromArray(KALI.param0)
+  kaliMat.uniforms.uParam1.value.fromArray(KALI.param1)
+  kaliMat.uniforms.uParamFix.value.fromArray(KALI.paramFix)
+  kaliMat.uniforms.uRefineAmt.value = KALI.refineAmt
+  kaliMat.uniforms.uDistInit.value  = KALI.distInit
+  kaliMat.uniforms.uGemBright.value = KALI.gemBright
+  kaliMat.uniforms.uDarkColor.value.fromArray(KALI.darkColor)
+  kaliMat.uniforms.uAccu0.value     = KALI.accu0
+  kaliMat.uniforms.uAccu1.value     = KALI.accu1
+  kaliMat.uniforms.uScrollCam.value   = KALI.scrollCam
+  kaliMat.uniforms.uEdgePos.value     = KALI.edgePos
+  kaliMat.uniforms.uEdgeWidth.value   = KALI.edgeWidth
+  kaliMat.uniforms.uEdgeStrength.value= KALI.edgeStrength
+  kaliMat.uniforms.uEdgeInvert.value  = KALI.edgeInvert
+  kaliMat.uniforms.uHueShift.value    = KALI.hueShift
+  kaliCanvas.style.transform = `translateY(${s1Yt}px)`  // slides with S1
+  kaliRenderer.render(kaliScene, kaliCam)
+  kaliTex.needsUpdate = true
+  logoCanvas.style.opacity = 1
+  logoRenderer.render(logoScene, logoCam)
+
+  helixRenderer.render(helixScene, helixCam)
+}
+
+// ═══════════════════════════════════════════════════
+//  LOADER
+// ═══════════════════════════════════════════════════
+;(function () {
+  const loaderEl = document.getElementById('loader')
+  const numEl    = document.getElementById('loader-num')
+
+  // Resources to preload: all project images + SVG logo
+  const imageUrls = PROJECTS
+    .map(p => p.src)
+    .filter(s => s && !s.endsWith('.mp4'))
+
+  const total   = imageUrls.length + 1   // +1 for SVG
+  let   loaded  = 0
+  let   display = 0   // smoothly animated number
+
+  function tick(actual) {
+    // Animate display number toward actual
+    const step = () => {
+      display += (actual - display) * 0.12 + 0.3
+      if (display >= actual) display = actual
+      numEl.textContent = Math.floor(display)
+      if (display < actual) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }
+
+  function onLoad() {
+    loaded++
+    const pct = Math.round(loaded / total * 100)
+    tick(pct)
+    if (loaded >= total) {
+      tick(100)
+      setTimeout(() => {
+        loaderEl.classList.add('done')
+        setTimeout(() => loaderEl.remove(), 900)
+      }, 300)
+    }
+  }
+
+  // Preload images
+  imageUrls.forEach(url => {
+    const img = new Image()
+    img.onload = img.onerror = onLoad
+    img.src = url
+  })
+
+  // SVG counts as one resource — resolved when logoLoaded flag is set
+  const svgCheck = setInterval(() => {
+    if (logoLoaded) { clearInterval(svgCheck); onLoad() }
+  }, 50)
+})()
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+renderText(currentLang)
+resize()
+animate()
+
+// ═══════════════════════════════════════════════════
+//  KALI PANEL
+// ═══════════════════════════════════════════════════
+;(function () {
+  const $ = id => document.getElementById(id)
+
+  // helpers
+  function toHex(r, g, b) {
+    return '#' + [r,g,b].map(v => Math.round(v*255).toString(16).padStart(2,'0')).join('')
+  }
+  function fromHex(h) {
+    return [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255]
+  }
+  function f3(v) { return v.toFixed(3) }
+  function f4(v) { return v.toFixed(4) }
+  function f0(v) { return Math.round(v).toString() }
+
+  // collapse toggle
+  $('kp-header').addEventListener('click', () => {
+    $('kp-body').classList.toggle('kp-hidden')
+    $('kp-chevron').textContent = $('kp-body').classList.contains('kp-hidden') ? '▸' : '▾'
+  })
+  // stop page scroll when scrolling inside panel
+  $('kali-panel').addEventListener('wheel', e => e.stopPropagation())
+
+  // init a slider: set value + display
+  function ini(id, val, vid, fmt) {
+    $(id).value = val
+    if (vid) $(vid).textContent = fmt(val)
+  }
+  // wire a slider to a setter
+  function wr(id, setter, vid, fmt) {
+    $(id).addEventListener('input', function() {
+      const v = +this.value; setter(v)
+      if (vid) $(vid).textContent = fmt(v)
+    })
+  }
+
+  // ── scroll display + scrollCam ──
+  ini('kp-scrollCam', KALI.scrollCam, 'kp-scrollCam-v', f3)
+  wr ('kp-scrollCam', v => { KALI.scrollCam = v }, 'kp-scrollCam-v', f3)
+
+  // ── animate ──
+  const animCk = $('kp-animate')
+  animCk.checked = KALI.animate
+  animCk.addEventListener('change', () => { KALI.animate = animCk.checked; setAnimDis() })
+
+  function setAnimDis() {
+    const a = KALI.animate
+    $('kp-p0x').disabled = a;  $('kp-p0z').disabled = a
+    $('kp-camT').disabled = a
+  }
+  setAnimDis()
+
+  ini('kp-timeScale', KALI.timeScale, 'kp-timeScale-v', f3)
+  wr ('kp-timeScale', v => { KALI.timeScale = v }, 'kp-timeScale-v', f3)
+
+  ini('kp-camT', KALI.camT, 'kp-camT-v', f3)
+  wr ('kp-camT', v => { KALI.camT = v; kaliClock = 0 }, 'kp-camT-v', f3)
+
+  // ── mode ──
+  ini('kp-mph', KALI.mph, 'kp-mph-v', f3)
+  wr ('kp-mph', v => { KALI.mph = v }, 'kp-mph-v', f3)
+
+  // ── param0 ──
+  ini('kp-p0x', KALI.param0[0], 'kp-p0x-v', f3)
+  wr ('kp-p0x', v => { KALI.param0[0] = v }, 'kp-p0x-v', f3)
+  ini('kp-p0y', KALI.param0[1], 'kp-p0y-v', f3)
+  wr ('kp-p0y', v => { KALI.param0[1] = v }, 'kp-p0y-v', f3)
+  ini('kp-p0z', KALI.param0[2], 'kp-p0z-v', f3)
+  wr ('kp-p0z', v => { KALI.param0[2] = v }, 'kp-p0z-v', f3)
+
+  // ── param1 ──
+  ini('kp-p1x', KALI.param1[0], 'kp-p1x-v', f3)
+  wr ('kp-p1x', v => { KALI.param1[0] = v }, 'kp-p1x-v', f3)
+  ini('kp-p1y', KALI.param1[1], 'kp-p1y-v', f3)
+  wr ('kp-p1y', v => { KALI.param1[1] = v }, 'kp-p1y-v', f3)
+  ini('kp-p1z', KALI.param1[2], 'kp-p1z-v', f3)
+  wr ('kp-p1z', v => { KALI.param1[2] = v }, 'kp-p1z-v', f3)
+
+  // ── paramFix ──
+  ini('kp-pfx', KALI.paramFix[0], 'kp-pfx-v', f3)
+  wr ('kp-pfx', v => { KALI.paramFix[0] = v }, 'kp-pfx-v', f3)
+  ini('kp-pfy', KALI.paramFix[1], 'kp-pfy-v', f3)
+  wr ('kp-pfy', v => { KALI.paramFix[1] = v }, 'kp-pfy-v', f3)
+  ini('kp-pfz', KALI.paramFix[2], 'kp-pfz-v', f3)
+  wr ('kp-pfz', v => { KALI.paramFix[2] = v }, 'kp-pfz-v', f3)
+  ini('kp-refineAmt', KALI.refineAmt, 'kp-refineAmt-v', f3)
+  wr ('kp-refineAmt', v => { KALI.refineAmt = v }, 'kp-refineAmt-v', f3)
+  ini('kp-distInit', KALI.distInit, 'kp-distInit-v', f3)
+  wr ('kp-distInit', v => { KALI.distInit = v }, 'kp-distInit-v', f3)
+
+  // ── colour ──
+  ini('kp-gemBright', KALI.gemBright, 'kp-gemBright-v', f3)
+  wr ('kp-gemBright', v => { KALI.gemBright = v }, 'kp-gemBright-v', f3)
+
+  const colorPick = $('kp-darkColor')
+  colorPick.value = toHex(...KALI.darkColor)
+  colorPick.addEventListener('input', () => { KALI.darkColor = fromHex(colorPick.value) })
+
+  ini('kp-accu0', KALI.accu0, 'kp-accu0-v', f0)
+  wr ('kp-accu0', v => { KALI.accu0 = v }, 'kp-accu0-v', f0)
+  ini('kp-accu1', KALI.accu1, 'kp-accu1-v', f0)
+  wr ('kp-accu1', v => { KALI.accu1 = v }, 'kp-accu1-v', f0)
+
+  // ── edge transition ──
+  ini('kp-edgePos',      KALI.edgePos,      'kp-edgePos-v',      f3)
+  wr ('kp-edgePos',      v => { KALI.edgePos = v },      'kp-edgePos-v',      f3)
+  ini('kp-edgeWidth',    KALI.edgeWidth,    'kp-edgeWidth-v',    f3)
+  wr ('kp-edgeWidth',    v => { KALI.edgeWidth = v },    'kp-edgeWidth-v',    f3)
+  ini('kp-edgeStrength', KALI.edgeStrength, 'kp-edgeStrength-v', f3)
+  wr ('kp-edgeStrength', v => { KALI.edgeStrength = v }, 'kp-edgeStrength-v', f3)
+  const edgeInvCk = $('kp-edgeInvert')
+  edgeInvCk.checked = KALI.edgeInvert > 0.5
+  edgeInvCk.addEventListener('change', () => { KALI.edgeInvert = edgeInvCk.checked ? 1.0 : 0.0 })
+
+  ini('kp-hueShift', KALI.hueShift, 'kp-hueShift-v', f3)
+  wr ('kp-hueShift', v => { KALI.hueShift = v }, 'kp-hueShift-v', f3)
+
+// ── refresh all sliders from current KALI values ──
+  function refreshPanel() {
+    ini('kp-scrollCam',  KALI.scrollCam,    'kp-scrollCam-v',  f3)
+    animCk.checked = KALI.animate; setAnimDis()
+    ini('kp-timeScale',  KALI.timeScale,    'kp-timeScale-v',  f3)
+    ini('kp-camT',       KALI.camT,         'kp-camT-v',       f3)
+    ini('kp-mph',        KALI.mph,          'kp-mph-v',        f3)
+    ini('kp-p0x',        KALI.param0[0],    'kp-p0x-v',        f3)
+    ini('kp-p0y',        KALI.param0[1],    'kp-p0y-v',        f3)
+    ini('kp-p0z',        KALI.param0[2],    'kp-p0z-v',        f3)
+    ini('kp-p1x',        KALI.param1[0],    'kp-p1x-v',        f3)
+    ini('kp-p1y',        KALI.param1[1],    'kp-p1y-v',        f3)
+    ini('kp-p1z',        KALI.param1[2],    'kp-p1z-v',        f3)
+    ini('kp-pfx',        KALI.paramFix[0],  'kp-pfx-v',        f3)
+    ini('kp-pfy',        KALI.paramFix[1],  'kp-pfy-v',        f3)
+    ini('kp-pfz',        KALI.paramFix[2],  'kp-pfz-v',        f3)
+    ini('kp-refineAmt',  KALI.refineAmt,    'kp-refineAmt-v',  f3)
+    ini('kp-distInit',   KALI.distInit,     'kp-distInit-v',   f3)
+    ini('kp-gemBright',  KALI.gemBright,    'kp-gemBright-v',  f3)
+    colorPick.value = toHex(...KALI.darkColor)
+    ini('kp-accu0',        KALI.accu0,        'kp-accu0-v',        f0)
+    ini('kp-accu1',        KALI.accu1,        'kp-accu1-v',        f0)
+    ini('kp-edgePos',      KALI.edgePos,      'kp-edgePos-v',      f3)
+    ini('kp-edgeWidth',    KALI.edgeWidth,    'kp-edgeWidth-v',    f3)
+    ini('kp-edgeStrength', KALI.edgeStrength, 'kp-edgeStrength-v', f3)
+    edgeInvCk.checked = KALI.edgeInvert > 0.5
+    ini('kp-hueShift', KALI.hueShift, 'kp-hueShift-v', f3)
+  }
+
+  // ── load kali_params.json from disk on startup ──
+  fetch('/kali_params.json?_=' + Date.now())
+    .then(r => { if (!r.ok) throw 0; return r.json() })
+    .then(saved => { Object.assign(KALI, saved); kaliClock = 0; refreshPanel() })
+    .catch(() => {})   // file doesn't exist yet — use defaults
+
+  // keep live displays in sync
+  ;(function syncLive() {
+    const sv = kaliMat.uniforms.uScroll.value
+    $('kp-scroll-disp').value = sv
+    $('kp-scroll-v').textContent = sv.toFixed(3)
+    if (KALI.animate) {
+      $('kp-p0x').value = KALI.param0[0]; $('kp-p0x-v').textContent = f3(KALI.param0[0])
+      $('kp-p0z').value = KALI.param0[2]; $('kp-p0z-v').textContent = f3(KALI.param0[2])
+    }
+    requestAnimationFrame(syncLive)
+  })()
+
+  // ── save: POST to server → overwrites kali_params.json ──
+  $('kp-save').addEventListener('click', () => {
+    const json = JSON.stringify(KALI, null, 2)
+    fetch('/save-kali', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json })
+      .then(r => {
+        const ok = $('kp-ok')
+        ok.textContent = r.ok ? '✓ kali_params.json saved' : '✗ server error'
+        setTimeout(() => { ok.textContent = '' }, 2000)
+      })
+      .catch(() => {
+        // Fallback: download file if server not running
+        const blob = new Blob([json], { type: 'application/json' })
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+        a.download = 'kali_params.json'; a.click(); URL.revokeObjectURL(a.href)
+        const ok = $('kp-ok'); ok.textContent = '⚠ server offline — downloaded'
+        setTimeout(() => { ok.textContent = '' }, 3000)
+      })
+  })
+
+  // ── copy JSON ──
+  $('kp-copy').addEventListener('click', () => {
+    const json = JSON.stringify(KALI, null, 2)
+    navigator.clipboard.writeText(json).then(
+      () => { const ok = $('kp-ok'); ok.textContent = '✓ copied'; setTimeout(() => { ok.textContent = '' }, 1500) },
+      () => { prompt('Copy JSON:', json) }
+    )
+  })
+})()
+
+// ═══════════════════════════════════════════════════
+//  LIGHTBOX — click card to expand fullscreen
+// ═══════════════════════════════════════════════════
+;(function () {
+  const lbEl      = document.getElementById('lightbox')
+  const lbInner   = document.getElementById('lb-inner')
+  const raycaster = new THREE.Raycaster()
+  const _mouse    = new THREE.Vector2()
+  let lbOpenIdx   = -1
+  let lbMediaEl   = null
+
+  // Compute the rawScroll value that centers card idx on screen
+  function snapRawScrollToCard(idx) {
+    const snapDp = idx < S2_COUNT
+      ? 2 * PAGE_H + Math.min(idx / (S2_COUNT - 1), 0.9999) * PAGE_H
+      : 3 * PAGE_H + (idx - S2_COUNT) / (S3_COUNT - 1) * PAGE_H
+    const curFrac = ((rawScroll % TOTAL) + TOTAL) % TOTAL
+    rawScroll = rawScroll - curFrac + snapDp
+  }
+
+  function openLightbox(proj, idx, cx, cy) {
+    lbInner.innerHTML = ''
+    if (proj.isVideo) {
+      const vid = document.createElement('video')
+      Object.assign(vid, { src: proj.src, loop: true, autoplay: true,
+                           muted: true, playsInline: true, controls: true })
+      vid.setAttribute('playsinline', '')
+      lbMediaEl = vid
+      lbInner.appendChild(vid)
+    } else {
+      const img = document.createElement('img')
+      img.src = proj.src
+      lbInner.appendChild(img)
+    }
+
+    lbOpenIdx = idx
+    // Double rAF ensures the class addition triggers the CSS transition
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => lbEl.classList.add('lb-open'))
+    )
+  }
+
+  function closeLightbox() {
+    if (lbOpenIdx === -1) return
+    lbEl.classList.remove('lb-open')
+    lbOpenIdx = -1
+    if (lbMediaEl) { lbMediaEl.pause(); lbMediaEl = null }
+    lbEl.addEventListener('transitionend', () => {
+      if (!lbEl.classList.contains('lb-open')) lbInner.innerHTML = ''
+    }, { once: true })
+  }
+
+  // Click on helix canvas → raycast to find hit card
+  helixCanvas.addEventListener('click', e => {
+    if (lbOpenIdx !== -1) return   // lightbox already open; backdrop handles close
+
+    const rect  = helixCanvas.getBoundingClientRect()
+    _mouse.x    =  ((e.clientX - rect.left) / rect.width)  * 2 - 1
+    _mouse.y    = -((e.clientY - rect.top)  / rect.height) * 2 + 1
+    raycaster.setFromCamera(_mouse, helixCam)
+
+    const clickable = PROJECTS
+      .filter(p => p._mesh && p.zh.title !== '')
+      .map(p => p._mesh)
+    const hits = raycaster.intersectObjects(clickable)
+    if (!hits.length) return
+
+    const idx  = PROJECTS.findIndex(p => p._mesh === hits[0].object)
+    if (idx < 0) return
+    const proj = PROJECTS[idx]
+    if (proj._ripple) return    // already rippling, ignore double-click
+
+    // Click UV → card local-space coords (origin = card center)
+    const uv = hits[0].uv
+    const lx = (uv.x - 0.5) * CARD_W
+    const ly = (uv.y - 0.5) * CARD_H
+
+    // Scroll the clicked card to center immediately
+    snapRawScrollToCard(idx)
+
+    // Start 3-D surface ripple; open lightbox once wave has settled
+    proj._ripple = {
+      t: 0, cx: lx, cy: ly,
+      onDone: () => openLightbox(proj, idx, e.clientX, e.clientY),
+    }
+  })
+
+  // Click backdrop → close
+  lbEl.addEventListener('click', closeLightbox)
+  // Click content itself → don't close (e.g. video controls)
+  lbInner.addEventListener('click', e => e.stopPropagation())
+})()
+</script>
+</body>
+</html>

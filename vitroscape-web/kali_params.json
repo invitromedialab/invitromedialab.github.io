@@ -1,0 +1,46 @@
+{
+  "animate": false,
+  "timeScale": 1.21,
+  "camT": 63,
+  "mph": 0,
+  "param0": [
+    0.3,
+    1.663,
+    0.237
+  ],
+  "param1": [
+    1.368,
+    2.5,
+    2.5
+  ],
+  "paramFix": [
+    1.122,
+    0.776,
+    0.633
+  ],
+  "refineAmt": 0,
+  "distInit": 17.6,
+  "gemBright": 1.9,
+  "darkColor": [
+    1,
+    1,
+    1
+  ],
+  "accu0": 30000,
+  "accu1": 19500,
+  "scrollCam": 0.3,
+  "invert": 1,
+  "hueShift": 0,
+  "saturation": 1,
+  "brightness": 1,
+  "contrast": 1,
+  "gamma": 1,
+  "edgePos": 0.153,
+  "edgeWidth": 0.104,
+  "edgeStrength": 0.076,
+  "edgeInvert": 0,
+  "dofEnabled": true,
+  "dofFocus": 0.5,
+  "dofAperture": 0.0001,
+  "dofMaxblur": 0.0019
+}
