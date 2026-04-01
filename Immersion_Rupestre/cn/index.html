@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洞穴剧场 — 项目简报</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0905;
+    --surface: #131109;
+    --surface-2: #1a170e;
+    --surface-3: #211e14;
+    --accent: #c8893a;
+    --accent-light: #dfa84e;
+    --accent-dim: #8a5e24;
+    --text: #f0e8d8;
+    --text-secondary: #c0b4a0;
+    --text-dim: #7a7060;
+    --border: #2a2518;
+    --border-accent: #3d3220;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+    cursor: none;
+  }
+
+  * { cursor: none !important; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10, 9, 5, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+
+  .nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 0 0.9rem;
+    line-height: 52px;
+    display: block;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+  .nav-links a:hover { color: var(--accent-light); }
+
+  .lang-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+    margin-left: 1rem;
+  }
+  .lang-switch a {
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 0.15rem 0.35rem;
+    transition: color 0.2s;
+  }
+  .lang-switch a:hover { color: var(--accent-light); }
+  .lang-switch a.active { color: var(--accent); }
+  .lang-switch span { color: var(--border-accent); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #heroCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 20px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.8);
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: #fff;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 40px rgba(0,0,0,1), 0 2px 12px rgba(0,0,0,0.9);
+  }
+
+  .hero-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-weight: 300;
+    font-style: italic;
+    color: #fff;
+    margin-bottom: 3rem;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 30px rgba(0,0,0,1), 0 1px 8px rgba(0,0,0,0.9);
+  }
+
+  .hero-meta {
+    font-size: 0.75rem;
+    color: #d8cec4;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 20px rgba(0,0,0,1);
+  }
+
+  .hero-divider {
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, var(--accent-dim), transparent);
+    margin: 3rem auto 0;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  section {
+    padding: 6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  section:last-of-type { border-bottom: none; }
+
+  /* ── SECTION HEADERS ── */
+  .section-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 300;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    font-weight: 400;
+    color: var(--text);
+    margin: 3.5rem 0 1.5rem;
+    letter-spacing: 0.01em;
+  }
+
+  h3:first-of-type { margin-top: 0; }
+
+  h4 {
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin: 2rem 0 0.8rem;
+  }
+
+  /* ── TEXT ── */
+  p {
+    color: var(--text);
+    margin-bottom: 1.4rem;
+    font-size: 0.97rem;
+  }
+
+  p:last-child { margin-bottom: 0; }
+
+  strong {
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  em {
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .lead {
+    font-size: 1.05rem;
+    line-height: 1.9;
+    color: var(--text);
+  }
+
+  .mystery-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    font-style: italic;
+    font-weight: 300;
+    color: var(--accent-light);
+    line-height: 1.7;
+    border-left: 2px solid var(--accent-dim);
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  /* ── IMAGES ── */
+  .scene-image {
+    width: 100%;
+    margin: 2rem 0;
+    border: 1px solid var(--border-accent);
+    display: block;
+    position: relative;
+  }
+
+  .scene-image img {
+    width: 100%;
+    display: block;
+    filter: brightness(0.92) contrast(1.05);
+  }
+
+  .scene-image figcaption {
+    padding: 0.7rem 1rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+  }
+
+  .video-wrap {
+    width: 100%;
+    margin: 2rem 0;
+    border: 1px solid var(--border-accent);
+    background: #000;
+  }
+
+  .video-wrap video {
+    width: 100%;
+    display: block;
+    max-height: 480px;
+    object-fit: cover;
+  }
+
+  .video-caption {
+    padding: 0.6rem 1rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── SCENE CARD ── */
+  .scene-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin: 3rem 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .scene-card-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+  }
+
+  .scene-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem;
+    font-weight: 300;
+    color: var(--accent-dim);
+    line-height: 1;
+  }
+
+  .scene-title-wrap {}
+  .scene-title-wrap h3 { margin: 0 0 0.2rem; font-size: 1.3rem; }
+  .scene-size {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .scene-card-body { padding: 2rem; }
+
+  /* ── TRIGGERS ── */
+  .trigger-list {
+    margin: 1.5rem 0;
+    list-style: none;
+  }
+
+  .trigger-item {
+    display: flex;
+    gap: 1.2rem;
+    padding: 1.2rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .trigger-item:last-child { border-bottom: none; }
+
+  .trigger-icon {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--accent-dim);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .trigger-title {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--accent-light);
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.04em;
+  }
+
+  .trigger-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ── SEASONS ── */
+  .seasons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .season-cell {
+    background: var(--surface-2);
+    padding: 1.2rem 1.5rem;
+  }
+
+  .season-name {
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .season-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── TABLES ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.9rem 1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent-dim);
+    font-weight: 500;
+    background: var(--surface-2);
+  }
+
+  td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+
+  td:first-child { color: var(--text); }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface-2); }
+
+  .table-highlight td {
+    color: var(--text);
+    font-weight: 500;
+    background: var(--surface-3);
+  }
+
+  /* ── STAT CARDS ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 2rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--accent-light);
+    line-height: 1.1;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 0.4rem;
+    display: block;
+  }
+
+  /* ── REVENUE SOURCES ── */
+  .revenue-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .revenue-item {
+    background: var(--surface);
+    padding: 1.2rem 1.5rem;
+    display: grid;
+    grid-template-columns: 5rem 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .revenue-tag {
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+
+  .revenue-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .revenue-amount {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ── COOP MODES ── */
+  .coop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .coop-card {
+    background: var(--surface);
+    padding: 1.5rem;
+  }
+
+  .coop-mode {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    font-weight: 500;
+  }
+
+  .coop-role {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── THEME TABLE ── */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .theme-cell {
+    background: var(--surface);
+    padding: 1.2rem;
+  }
+
+  .theme-name {
+    font-weight: 500;
+    font-size: 0.88rem;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .theme-target {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── RISK ITEMS ── */
+  .risk-list { margin: 1.5rem 0; }
+
+  .risk-item {
+    border-left: 2px solid var(--border-accent);
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    background: var(--surface);
+    border-radius: 0 6px 6px 0;
+  }
+
+  .risk-item:hover { border-left-color: var(--accent-dim); }
+
+  .risk-title {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.04em;
+  }
+
+  .risk-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  /* ── APPENDIX ── */
+  .appendix-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    margin: 2rem 0;
+  }
+
+  .code-block {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    color: #a0c080;
+    line-height: 1.9;
+    overflow-x: auto;
+    margin: 1rem 0;
+    white-space: pre;
+  }
+
+  .spec-list {
+    list-style: none;
+    margin: 1rem 0;
+  }
+
+  .spec-list li {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .spec-list li:last-child { border-bottom: none; }
+
+  .spec-list li span { color: var(--text-dim); font-size: 0.82rem; }
+
+  /* ── NOTE ── */
+  .note {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    border-left: 1px solid var(--border-accent);
+    padding: 0.8rem 1rem;
+    margin: 1.5rem 0;
+    line-height: 1.7;
+  }
+
+  /* ── TEAM ── */
+  .team-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .team-item {
+    background: var(--surface);
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .team-role {
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 500;
+    padding-top: 0.2rem;
+    white-space: nowrap;
+  }
+
+  .team-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  .team-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* ── INVESTMENT ── */
+  .invest-phase {
+    border: 1px solid var(--border);
+    margin: 2rem 0;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .invest-phase-header {
+    background: var(--surface-2);
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .invest-phase-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text);
+    letter-spacing: 0.04em;
+  }
+
+  .invest-phase-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    color: var(--accent-light);
+  }
+
+  .invest-phase-body { padding: 1.5rem; }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 4rem 2rem;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    color: var(--accent-dim);
+    margin-bottom: 0.8rem;
+  }
+
+  .footer-meta {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── DIVIDER ── */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border-accent), transparent);
+    margin: 3rem 0;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    nav { padding: 0 1rem; }
+    .nav-brand { font-size: 0.85rem; }
+    .container { padding: 0 1.2rem; }
+    section { padding: 4rem 0; }
+    .scene-card-body { padding: 1.2rem; }
+    .revenue-item { grid-template-columns: 1fr; gap: 0.3rem; }
+    .revenue-amount { text-align: left; }
+    .seasons-grid { grid-template-columns: 1fr; }
+    .invest-phase-header { flex-direction: column; gap: 0.3rem; }
+    .team-item { grid-template-columns: 1fr; gap: 0.5rem; }
+  }
+
+  /* ── TORCH CURSOR ── */
+  * { cursor: none !important; }
+
+  #torchOverlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 200;
+    transition: opacity 0.5s;
+    mix-blend-mode: screen;
+  }
+
+  #fireCursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    z-index: 201;
+    width: 0;
+    height: 0;
+  }
+
+  .fire-outer {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,160,30,0.18) 0%, transparent 70%);
+    animation: fireOuter 0.25s ease-in-out infinite alternate;
+  }
+
+  .fire-mid {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,200,80,0.35) 0%, transparent 70%);
+    animation: fireMid 0.18s ease-in-out infinite alternate;
+  }
+
+  .fire-core {
+    position: absolute;
+    width: 7px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse at 50% 70%, #fff8e0 0%, #ffcc44 40%, #ff8800 80%, transparent 100%);
+    border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+    box-shadow:
+      0 0 6px 3px rgba(255, 200, 60, 0.7),
+      0 0 14px 6px rgba(255, 130, 10, 0.45),
+      0 0 28px 12px rgba(200, 80, 0, 0.2);
+    animation: fireCore 0.12s ease-in-out infinite alternate;
+  }
+
+  @keyframes fireCore {
+    from { transform: translate(-50%, -50%) scaleX(1)   scaleY(1); }
+    to   { transform: translate(-50%, -50%) scaleX(0.88) scaleY(1.08); }
+  }
+  @keyframes fireMid {
+    from { transform: translate(-50%, -50%) scale(1);    opacity: 0.9; }
+    to   { transform: translate(-50%, -50%) scale(1.15); opacity: 0.6; }
+  }
+  @keyframes fireOuter {
+    from { transform: translate(-50%, -50%) scale(1);    opacity: 0.7; }
+    to   { transform: translate(-50%, -50%) scale(1.2);  opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">洞穴剧场</div>
+  <ul class="nav-links">
+    <li><a href="#overview">概况</a></li>
+    <li><a href="#subject">题材</a></li>
+    <li><a href="#experience">体验</a></li>
+    <li><a href="#sensory">感官</a></li>
+
+    <li><a href="#replicability">可复制</a></li>
+    <li><a href="#academic">学术</a></li>
+    <li><a href="#timing">时机</a></li>
+    <li><a href="#team">团队</a></li>
+  </ul>
+  <div class="lang-switch">
+    <a href="../cn/" class="active">中</a><span>|</span><a href="../en/">EN</a><span>|</span><a href="../fr/">FR</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-content">
+    <p class="hero-eyebrow">项目简报 · 2026年3月</p>
+    <h1 class="hero-title">洞穴剧场</h1>
+    <p class="hero-subtitle">Cave Theatre — An Immersive Experience</p>
+    <div class="hero-divider"></div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="container">
+    <p class="section-label">项目概况</p>
+    <h2>一套系统，无限叙事</h2>
+
+    <p class="lead">洞穴剧场是一个以法国史前洞穴壁画为主题的沉浸式体验装置，面向商业空间、博物馆和文旅场馆。</p>
+
+    <p>项目的核心是一套定制的空间感知与投影系统：系统实时追踪每个油灯在空间中的位置，驱动投影光照和内容响应。硬件和软件架构一次建成，内容可以按项目替换，支持跨场馆复用。</p>
+
+  </div>
+</section>
+
+<!-- SUBJECT -->
+<section id="subject">
+  <div class="container">
+    <p class="section-label">为什么是洞穴壁画</p>
+    <h2>三万年的谜</h2>
+
+    <p>洞穴，是人类最早的沉浸式体验空间。史前画家选择黑暗的深处，用油灯控制光照范围，在声学共鸣最强的位置留下图像——考古学家发现，肖维和拉斯科绘画最密集的区域恰好对应混响最强的地点。空间、光线、声音，三万年前已经有人在有意识地组织这些。我们受此启发，有了这个项目的想法。</p>
+
+    <p>肖维洞穴（Chauvet）的壁画距今约 36,000 年，拉斯科（Lascaux）约 17,000 年——两者之间相隔近 20,000 年，大约是我们与三星堆之间时间距离的五倍。但在这漫长的时间跨度里，史前人类持续在洞穴深处作画，直到大约一万年前，这个行为忽然停止了。没有人知道为什么。也没有人知道这些画的意义是什么。它们是仪式，是记录，是某种我们已经完全遗忘的语言？这些故事延续了三万年，然后成为了永恒的谜团。</p>
+
+    <div class="section-divider"></div>
+
+    <p>法国西南部的史前洞穴是目前已知最重要的史前艺术遗址群，联合国教科文组织将其中多处列为世界遗产。然而，这些洞穴已陆续因保护原因对公众关闭——拉斯科洞穴自 1963 年起禁止进入，肖维洞穴自 1994 年发现起即封闭至今。目前世界各地观众能看到的，几乎都是专业机构制作的复制品。</p>
+
+    <p>法国政府为拉斯科复制展馆（Lascaux IV）投入超过 5,700 万欧元——复制品本身已经是这些遗产面向公众的正式形式。而今天的技术手段，让复制品可以做得远不止于此：它可以是互动的，可以响应观众的行为，可以在任何城市落地。地理和空间的限制不再是障碍，这些遗产的体验方式第一次有了真正的可能性。</p>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="container">
+    <p class="section-label">体验内容</p>
+    <h2>三个连续的空间</h2>
+
+    <!-- SCENE 1 -->
+    <div class="scene-card">
+      <div class="scene-card-header">
+        <div class="scene-number">01</div>
+        <div class="scene-title-wrap">
+          <h3>复制品长廊</h3>
+          <div class="scene-size">约 12 × 5 米</div>
+        </div>
+      </div>
+      <div class="scene-card-body">
+        <figure class="scene-image">
+          <img src="../assets/6.png" alt="场景一：复制品长廊">
+          <figcaption>场景一 — 效果图参考</figcaption>
+        </figure>
+
+        <p>长廊一侧安装 3–4 段洞穴壁面复制品，对应真实遗址：拉斯科公牛大厅、肖维洞穴、鲁菲尼亚克猛犸象群。复制品采用玻璃纤维加矿物涂层制作，还原真实岩石的表面起伏。</p>
+
+        <p>进入时，展厅处于近乎全暗的状态。观众从取灯台拿起油灯，灯在手中亮起。取灯台旁边摆着一个石碗——它是空的，等着被点亮。观众自然地把油灯靠近，石碗里的仿真火焰亮起，发出不规则的暖色闪烁。同时，长廊入口的投影门缓缓打开。这个动作不需要任何说明，它同时完成了两件事：给观众一个仪式感的开始，也告诉他们油灯可以点亮空间里的东西。</p>
+
+        <p>油灯照到哪里，哪里才亮起来。其余区域保持黑暗。这和史前画家进洞时的处境完全一样——手里只有一盏灯，能看见的范围就是那一圈光。</p>
+
+        <p>长廊沿线的复制品壁面上嵌入了 5–6 个石碗。任何一名观众单独靠近，石碗就会点亮——仿真火焰 LED 产生自然的不规则闪烁，同时照亮旁边那段壁画区域，颜色加深，细节浮现。走廊里被点亮的石碗越多，整个空间越接近史前画家工作时的状态。</p>
+
+        <figure class="scene-image">
+          <img src="../assets/7.png" alt="石碗点亮效果">
+        </figure>
+
+        <div class="section-divider"></div>
+
+        <h4>感官环境</h4>
+        <p>入口处的气味是石灰岩和矿物的气息，带着洞穴特有的冷意。这由入口区的气味扩散装置控制，与室外空气完全隔离。声音系统在整个长廊维持一层低沉的环境底声——岩壁的混响、远处极微弱的滴水声、偶尔的气流——不构成具体的声音事件，只是让空间的质感对了。脚步声在这里听起来和普通展厅不同，观众会本能地放轻动作。这三层感官——气味、黑暗、声音——共同建立起真实的感觉空间。</p>
+
+        <div class="section-divider"></div>
+
+        <h4>实时光照系统</h4>
+        <p>油灯位置由定位系统实时追踪，投影系统根据坐标在复制品表面生成对应的光照。由于复制品有真实的物理起伏，光从不同角度打来会产生不同的浮雕阴影，岩石感是真实的，不是平面模拟出来的。</p>
+
+        <p>真实洞穴中有一类体验很难在静态展示中还原：许多壁画里混有刻画的痕迹，这些线条在正面光下几乎看不见，只有当光从侧面低角度扫过时才会浮现出来。这是史前画家有意为之的——图像随光的角度变化而显现，不是一成不变的画面。我们在复制品表面叠加了一层实时投影光照，油灯角度的改变直接影响壁面上光影的方向。观众移动手中的灯，会看到岩面上的某些细节从黑暗中逐渐显出来。这个体验只有在真实洞穴里持灯行走才能得到，我们把它带进了展厅。</p>
+
+        <div class="section-divider"></div>
+
+        <h4>两类触发事件</h4>
+        <ul class="trigger-list">
+          <li class="trigger-item">
+            <div class="trigger-icon">①</div>
+            <div>
+              <div class="trigger-title">低语解说</div>
+              <p class="trigger-desc">油灯在某段壁画前停留 8 秒以上，会触发来自壁画方向的低语，讲述这段壁画的一个具体细节。语言使用虚构音节，有节奏和语调起伏，但不属于任何现存语言，只能感受情绪，无法理解字面内容。声音播毕，壁画区域出现短暂的余烬高亮，然后消退。</p>
+            </div>
+          </li>
+          <li class="trigger-item">
+            <div class="trigger-icon">②</div>
+            <div>
+              <div class="trigger-title">动物激活</div>
+              <p class="trigger-desc">油灯非常靠近某只动物时，触发轮廓描线动画：一条发光线从头部开始沿轮廓行走，2–3 秒走完全身，像被重新描出来，然后做一次余烬脉冲后在 2 秒内消退。拉斯科的马有六条腿，原牛有八条腿，这是画家用多腿表达运动的方式——六腿马触发时，六条腿依次描线，顺序对应步伐节奏，运动感在描线过程中自然显现。</p>
+            </div>
+          </li>
+        </ul>
+
+        <figure class="scene-image">
+          <img src="../assets/5.png" alt="动物激活描线动画效果">
+        </figure>
+
+        <p>场景一末端，当有观众走到出口区域并停留片刻，地面脚印投影出现——一组人的脚印和动物爪印，从长廊末端延伸向场景二入口，引导观众跟随。</p>
+
+        <div class="section-divider"></div>
+
+        <h4>隐藏内容：几何符号</h4>
+        <p>真实洞穴壁画中存在大量意义未知的几何图案——螺旋、点阵、格状符号——学界至今无法解释它们的用途。展厅里的复制品壁面上也藏有这些符号，但在正常光线角度下完全不可见。只有当油灯从非常低的侧角靠近某个位置，符号才会从岩面浮现出来。发现时有一声轻微的音效反馈，符号短暂发光后消退。三个场景中共藏有 5 个符号，分布在不同位置。</p>
+      </div>
+    </div>
+
+    <!-- SCENE 2 -->
+    <div class="scene-card">
+      <div class="scene-card-header">
+        <div class="scene-number">02</div>
+        <div class="scene-title-wrap">
+          <h3>圆形剧场</h3>
+          <div class="scene-size">直径约 8–10 米，顶高 4 米</div>
+        </div>
+      </div>
+      <div class="scene-card-body">
+        <figure class="scene-image">
+          <img src="../assets/3.png" alt="场景二：圆形剧场">
+          <figcaption>场景二 — 效果图参考</figcaption>
+        </figure>
+
+        <p>圆形空间的墙面是一整圈连续的投影面。四个方向分别对应四个季节，同时运行：</p>
+
+        <div class="seasons-grid">
+          <div class="season-cell">
+            <div class="season-name">春</div>
+            <p class="season-desc">母马带着小马驹从画面深处走来，鹿群向右迁移</p>
+          </div>
+          <div class="season-cell">
+            <div class="season-name">夏</div>
+            <p class="season-desc">野牛群密集聚集，雄牛体型巨大，底部有三文鱼洄游的鱼群</p>
+          </div>
+          <div class="season-cell">
+            <div class="season-name">秋</div>
+            <p class="season-desc">两头雄鹿面对面，鹿角完全展开，正在对峙</p>
+          </div>
+          <div class="season-cell">
+            <div class="season-name">冬</div>
+            <p class="season-desc">动物稀疏，大量手印叠在岩石上，几何符号散布其间</p>
+          </div>
+        </div>
+
+        <p>四个季节同时存在于这个圆形空间里，观众走向哪个方向，就进入哪个季节的画面。</p>
+
+        <p>墙上的动物像是悬浮在岩面上，油灯靠近时，它们会投下随光源移动的阴影——这个阴影是实时计算的，跟着观众手中的灯走。每种动物对光的反应不同：小马驹会好奇地停下，转头看向光源；野牛群里最近的一头先警觉，这个状态会向后传导；雄鹿会在持灯静立的观众面前缓缓走近。冬季区另有一处互动——手印在油灯靠近时微微发光；观众可以贴近岩面，摄像头捕捉手形，将自己的手印叠在古老的手印旁，约 60 秒后缓慢消退。</p>
+
+        <div class="video-wrap">
+          <video autoplay muted loop playsinline preload="auto">
+            <source src="../assets/grotte_1.mp4" type="video/mp4">
+          </video>
+          <div class="video-caption">实时投影效果测试</div>
+        </div>
+
+        <p>圆形空间中央有一组半透明投影，展示几个史前人类的形象。他们围着一小堆火坐着，低头看火、用手指在地上划画、站着听远处的声音。他们不看观众，不响应任何操作，只是在自己的时间里存在。观众绕着他们走，用油灯照亮他们。</p>
+      </div>
+    </div>
+
+    <!-- SCENE 3 -->
+    <div class="scene-card">
+      <div class="scene-card-header">
+        <div class="scene-number">03</div>
+        <div class="scene-title-wrap">
+          <h3>出口：VR 瞭望台</h3>
+          <div class="scene-size">约 4 × 4 米</div>
+        </div>
+      </div>
+      <div class="scene-card-body">
+        <figure class="scene-image">
+          <img src="../assets/4.png" alt="场景三：VR瞭望台">
+          <figcaption>场景三 — 效果图参考</figcaption>
+        </figure>
+
+        <p>出口区设有 6 台悬挂的 VR 观测镜，围成半圆排列，形成一个小型观景台。外形包裹成暗色金属的仪器形态。每批 6 名观众同时使用，各自把眼睛凑上去，像用望远镜一样观看，约 40 秒。整批同进同出，不产生等待。</p>
+
+        <p>镜中是一段 360° 双目立体视频：视角站在洞穴出口，面前是开阔的史前地貌——宽阔的河谷，琥珀色的草原，中景有一群野马缓慢移动，远处有猛犸象群带着幼崽穿越草原。回头看，洞穴内还有微弱的火光。</p>
+
+        <p>没有叙事，没有解说。只是那片世界在那里，安静地存在。</p>
+
+        <p>这里的气味换了——不再是石灰岩，而是湿草和冷空气。出口处设有归还台。观众将油灯放回，灯熄灭。</p>
+
+        <div class="section-divider"></div>
+
+        <h4>出口：数字藏品领取</h4>
+        <p>归还油灯后，观众扫描出口处二维码进入微信小程序，领取此次体验的数字藏品。藏品体系分三个层次：</p>
+        <ul class="trigger-list">
+          <li class="trigger-item">
+            <div class="trigger-icon">日</div>
+            <div>
+              <div class="trigger-title">日期批次藏品</div>
+              <p class="trigger-desc">每位观众入场即获得当天的基础藏品，图案对应一种洞穴动物形象。全年按月份轮换 12 种主题（野马、野牛、猛犸象、洞熊、披毛犀……），冬至、春分等特殊日期发放限定版。不同日期入场的观众藏品不同，形成自然的收集和复访动机。</p>
+            </div>
+          </li>
+          <li class="trigger-item">
+            <div class="trigger-icon">探</div>
+            <div>
+              <div class="trigger-title">探索层藏品</div>
+              <p class="trigger-desc">发现隐藏几何符号获得，每枚带有发现序号（"第 237 位发现此符号的人"）。序号越小越稀有，早期观众天然获得更高稀缺性。</p>
+            </div>
+          </li>
+          <li class="trigger-item">
+            <div class="trigger-icon">满</div>
+            <div>
+              <div class="trigger-title">集齐奖励</div>
+              <p class="trigger-desc">集齐当月全部动物藏品或发现全部 5 个几何符号，解锁完整洞穴场景动态藏品。所有藏品可直接分享到朋友圈，形成自发传播。</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- SENSORY DESIGN -->
+<section id="sensory">
+  <div class="container">
+    <p class="section-label">感官与交互细节</p>
+    <h2>看见、听见、闻见</h2>
+
+    <div class="seasons-grid" style="grid-template-columns:1fr 1fr 1fr; margin-bottom:2.5rem;">
+      <div class="season-cell">
+        <div class="season-name">温度</div>
+        <p class="season-desc">展厅维持约 17–18°C，有洞穴的凉意但不刺激。VR 出口区略微回升，身体感知"走出洞穴"。</p>
+      </div>
+      <div class="season-cell">
+        <div class="season-name">气味·长廊</div>
+        <p class="season-desc">湿碳酸钙 + 白垩矿物调 + 极淡湿土。冷雾扩散器在入口建立气味门，踏入即切换。</p>
+      </div>
+      <div class="season-cell">
+        <div class="season-name">气味·出口</div>
+        <p class="season-desc">雨后湿草（petrichor / 土臭素）+ 冷外气。与长廊形成完全对比，VR 视野与嗅觉同步。</p>
+      </div>
+    </div>
+
+    <h3>声音设计</h3>
+
+    <p>长廊全程底层音景：极低频洞穴共鸣（cave tone）作为基底，几乎只是感觉而非听见。不规则滴水声间隔 12–25 秒，带长混响尾，混响时长暗示空间深度。极轻气流声，像某处有开口在呼吸。</p>
+
+    <ul class="trigger-list">
+      <li class="trigger-item">
+        <div class="trigger-icon">火</div>
+        <div>
+          <div class="trigger-title">石碗点亮</div>
+          <p class="trigger-desc">油脂燃烧的细碎噼啪声 1–2 秒，然后稳定燃烧的低频嗡声融入底层音景，持续 2–3 分钟后随火焰减弱消退。</p>
+        </div>
+      </li>
+      <li class="trigger-item">
+        <div class="trigger-icon">兽</div>
+        <div>
+          <div class="trigger-title">动物互动</div>
+          <p class="trigger-desc">定向空间音频，声源严格对齐壁画位置。野牛：低频胸腔气息；马：轻鼻息带紧张感。声音从画面方向传来，不从扬声器。</p>
+        </div>
+      </li>
+      <li class="trigger-item">
+        <div class="trigger-icon">语</div>
+        <div>
+          <div class="trigger-title">低语解说</div>
+          <p class="trigger-desc">使用虚构音节语言——有节奏和语调起伏，像真实语言的表达结构，但不属于任何现存语言。观众无法理解字面内容，但能感受情绪和语气。声音从壁画位置传来，说完后壁画有短暂余烬高亮。</p>
+        </div>
+      </li>
+      <li class="trigger-item">
+        <div class="trigger-icon">符</div>
+        <div>
+          <div class="trigger-title">隐藏符号发现</div>
+          <p class="trigger-desc">单次石片钝击声，干而短，不再重复。像某种远古的应答信号。</p>
+        </div>
+      </li>
+    </ul>
+
+    <p>场景二圆形剧场四个方向各有专属底层音：春·细水声与远鸟鸣；夏·低频密布虫鸣；秋·间歇风声与干叶摩擦；冬·接近寂静，偶发极远冰裂声。观众在圆形空间走动时，声音随位置自然混合。中央人物所在位置有持续极轻的火堆声和难以辨认的低语嗡鸣。</p>
+
+    <div class="section-divider"></div>
+
+    <h3>视觉交互语言：轮廓描线动画</h3>
+
+    <p>壁画动物被激活时，统一使用<strong>描线式轮廓动画</strong>：从动物轮廓的头部开始，一条发光线沿轮廓行走，2–3 秒走完全身，像有人正在用灯光重新描出这条线。走完后整体轮廓做一次余烬脉冲（亮度微升微降），然后在 2 秒内缓慢消退，回到壁画原始状态。</p>
+
+    <p>这个动画有两层含义：一是"这条线当年也是这样被描出来的"，二是"你的灯光重新激活了它"。六腿马的触发是最完整的版本——六条腿依次描线，顺序对应步伐节奏，运动感在描线过程中自然显现。</p>
+
+
+  </div>
+</section>
+
+
+<!-- REPLICABILITY -->
+<section id="replicability">
+  <div class="container">
+    <p class="section-label">可复制性</p>
+    <h2>一套基础，无限主题</h2>
+
+    <p>系统分为两个层级：<strong>基础设施</strong>（硬件、定位、渲染框架）和<strong>内容</strong>（壁画、动物、场景设计）。</p>
+    <p>基础设施在项目间 100% 复用，只有内容每次重新制作。</p>
+    <p>从第二个项目开始，硬件不需要重复采购，团队的施工和校准经验也会显著缩短部署周期。随着项目积累，每次部署的效率持续提升。</p>
+    <p>核心道具系统（手持光源 + 空间定位 + 投影联动）不依赖洞穴题材，可以移植到其他叙事场景中。举例：皮影戏体验中，观众手持光源，决定哪个皮影被照亮、从哪个角度投影；或者用于夜间园林导览，手中的灯决定植物、建筑、水面的响应方式。机制不变，内容和形式随场景重新设计。</p>
+
+    <h4>延伸方向</h4>
+    <div class="theme-grid">
+      <div class="theme-cell">
+        <div class="theme-name">敦煌壁画</div>
+        <div class="theme-target">中国文博机构、西北文旅区</div>
+      </div>
+      <div class="theme-cell">
+        <div class="theme-name">皮影戏</div>
+        <div class="theme-target">文旅街区、传统文化体验馆</div>
+      </div>
+      <div class="theme-cell">
+        <div class="theme-name">海洋自然</div>
+        <div class="theme-target">自然博物馆、沿海商业体</div>
+      </div>
+      <div class="theme-cell">
+        <div class="theme-name">城市历史</div>
+        <div class="theme-target">城市文化中心、历史街区</div>
+      </div>
+      <div class="theme-cell">
+        <div class="theme-name">品牌定制</div>
+        <div class="theme-target">高端住宅销售中心、品牌旗舰空间</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ACADEMIC -->
+<section id="academic">
+  <div class="container">
+    <p class="section-label">学术合作与中法文化交流</p>
+    <h2>连接两个世界</h2>
+
+    <p>拉斯科、肖维、鲁菲尼亚克等遗址是法国文化部管理的国家遗产，同时也是学术界持续研究的对象。波尔多大学、法国国家科学研究中心（CNRS）等机构在史前艺术领域有长期积累。</p>
+
+    <p>我们计划联系法国大学系统，邀请相关学者以顾问或合作方身份参与项目。学术合作的实际价值在于：内容的准确性有专业机构背书，在向法国文化机构申请资质或授权时，学术关系是可信的入场凭证；同时，法国高校和研究机构的网络有助于项目在欧洲文化圈的传播。</p>
+
+    <p>在内容层面，这个项目有一个自然的中法文化交汇点：以法国的史前遗产为核心，由中国团队以数字技术重新呈现，在中国城市运营。这个结构本身可以作为中法文化交流的具体案例，有利于在两国的文化机构和官方渠道中建立对话。</p>
+
+    <p>长期方向上，在中国市场完成原型验证后，我们希望将这套系统和内容带到法国本地场馆落地，形成双向流通：中国观众看法国史前世界，法国观众看中国团队对这段历史的当代解读。</p>
+
+    <div class="mystery-quote">
+      这个合作框架不局限于洞穴壁画项目。invitro 在进行的其他项目，只要涉及中法两国的文化内容或在两国运营，都可以纳入同一个学术合作与文化交流的结构中，形成持续的合作关系，而不是单次的项目对接。
+    </div>
+  </div>
+</section>
+
+<!-- TIMING -->
+<section id="timing">
+  <div class="container">
+    <p class="section-label">时机判断</p>
+    <h2>进入窗口正在打开</h2>
+
+    <p>AI 正在重塑数字内容的制作方式。动画、音效、场景设计——这些过去需要大量人力的工作，现在可以借助 AI 工具在更短时间内完成。</p>
+    <p>同时，AI 的普及正在让屏幕上的内容越来越丰富、越来越廉价。观众在家可以获得大量高质量的视觉内容，反而让"必须到现场"的体验变得更稀少、更有价值。洞穴剧场的体验依赖真实的物理空间、真实的物理道具和真实的身体在场——这些不是数字内容可以替代的。</p>
+    <p>现在是进入这个方向比较合适的时间节点：AI 工具成熟到可以提高我们的制作效率，但这类物理体验还没有大量竞争者。</p>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="container">
+    <p class="section-label">团队</p>
+    <h2>创作与学术</h2>
+
+    <div class="team-grid">
+      <div class="team-item">
+        <div class="team-role">内容制作</div>
+        <div>
+          <div class="team-name">In Vitro</div>
+          <p class="team-desc">负责数字内容、互动系统和整体体验设计，有多个沉浸式装置的落地经验。</p>
+        </div>
+      </div>
+      <div class="team-item">
+        <div class="team-role">学术联络</div>
+        <div>
+          <div class="team-name">李兵</div>
+          <p class="team-desc">里尔大学（Université de Lille）认知与心理方向博士后，负责与法国高校和研究机构的对接。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">洞穴剧场 · Cave Theatre</div>
+  <p class="footer-meta">In Vitro · 2026年3月</p>
+</footer>
+
+
+<!-- HERO WEBGL NORMAL-MAP LIGHTING -->
+<script>
+(function() {
+  // ── WEBGL SHADOW PARAMS ───────────────────────────────────────────
+  const shadowFloor = 0.2;  // shadow minimum brightness (0=black, 0.4=soft grey) — raise to soften
+  // ─────────────────────────────────────────────────────────────────
+
+  const steps = ('ontouchstart' in window) ? 16 : 32;
+
+  const canvas = document.getElementById('heroCanvas');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const VS = `attribute vec2 aPos; varying vec2 vUv; void main() { vUv = vec2(aPos.x*0.5+0.5, 0.5-aPos.y*0.5); gl_Position = vec4(aPos,0.0,1.0); }`;
+  const FS = `precision mediump float;
+    uniform sampler2D uDiffuse,uNormal,uDisplace; uniform vec2 uLight,uRes; uniform float uTime; varying vec2 vUv;
+    float getH(vec2 u){return texture2D(uDisplace,u).r;}
+    float hShadow(vec2 p,float h0,vec2 lp){vec2 toL=lp-p; float res=1.0;
+      for(int i=1;i<=${steps};i++){float t=float(i)/${steps}.0; vec2 sP=p+toL*t; float rayH=h0+t*(4.0-h0);
+        res=min(res,clamp((rayH-getH(sP))*10.0,0.0,1.0)); if(res<0.02)break;} return res;}
+    void main(){float asp=uRes.x/uRes.y; vec2 tUV=vUv*vec2(asp,1.0); vec2 lT=uLight*vec2(asp,1.0);
+      float h0=getH(tUV)*0.95;
+      vec3 albedo=texture2D(uDiffuse,tUV).rgb; vec3 nmap=texture2D(uNormal,tUV).rgb;
+      vec3 N=normalize(nmap*2.0-1.0); N.y=-N.y;
+      vec2 d=uLight-vUv; float dist=length(d); vec3 L=normalize(vec3(d,0.45));
+      float diff=max(dot(N,L),0.0); float att=1.0/(1.0+dist*dist*5.95);
+      float sh=mix(${shadowFloor},1.0,hShadow(tUV,h0,lT));
+      float fl=1.0+0.06*(0.5*sin(uTime*27.0)+0.3*sin(uTime*19.0)+0.2*sin(uTime*11.0));
+      vec3 warm=vec3(1.0,0.765,0.502);
+      float vx=1.0-smoothstep(0.5,1.0,abs(vUv.x-0.5)*2.0); float vy=1.0-smoothstep(0.5,1.0,abs(vUv.y-0.5)*2.0);
+      gl_FragColor=vec4(albedo*warm*diff*att*sh*fl*vx*vy*1.8,1.0);}`;
+  function mk(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);return x;}
+  const p=gl.createProgram();gl.attachShader(p,mk(gl.VERTEX_SHADER,VS));gl.attachShader(p,mk(gl.FRAGMENT_SHADER,FS));gl.linkProgram(p);gl.useProgram(p);
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const ap=gl.getAttribLocation(p,'aPos');gl.enableVertexAttribArray(ap);gl.vertexAttribPointer(ap,2,gl.FLOAT,false,0,0);
+  const uL=gl.getUniformLocation(p,'uLight'),uR=gl.getUniformLocation(p,'uRes'),uTm=gl.getUniformLocation(p,'uTime'),uD=gl.getUniformLocation(p,'uDiffuse'),uN=gl.getUniformLocation(p,'uNormal'),uDp=gl.getUniformLocation(p,'uDisplace');
+  function mkTex(px){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(px));return t;}
+  const tD=mkTex([30,20,15,255]),tN=mkTex([128,128,255,255]),tDp=mkTex([128,128,128,255]);
+  let rc=0,tx=0.5,ty=0.5,lx=0.5,ly=0.5;
+  function loadT(t,src){const i=new Image();i.onload=function(){gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);[gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T].forEach(q=>gl.texParameteri(gl.TEXTURE_2D,q,gl.REPEAT));[gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER].forEach(q=>gl.texParameteri(gl.TEXTURE_2D,q,gl.LINEAR));rc++;};i.src=src;}
+  const BASE='../assets/mine_rock_wall_uebmddyn_2k/Mine_Rock_Wall_uebmddyn_2K_';
+  loadT(tD,BASE+'BaseColor.jpg'); loadT(tN,BASE+'Normal.jpg'); loadT(tDp,BASE+'Displacement.jpg');
+  function resize(){const h=canvas.parentElement;canvas.width=h.offsetWidth;canvas.height=h.offsetHeight;gl.viewport(0,0,canvas.width,canvas.height);}
+  window.addEventListener('resize',resize);resize();
+  function updateLight(cx,cy){const r=canvas.getBoundingClientRect();tx=(cx-r.left)/r.width;ty=(cy-r.top)/r.height;}
+  document.addEventListener('mousemove',function(e){updateLight(e.clientX,e.clientY);});
+  document.addEventListener('touchstart',function(e){const t=e.touches[0];updateLight(t.clientX,t.clientY);},{passive:true});
+  document.addEventListener('touchmove',function(e){const t=e.touches[0];updateLight(t.clientX,t.clientY);},{passive:true});
+  function render(){requestAnimationFrame(render);if(window._fire){const r=canvas.getBoundingClientRect();lx=(window._fire.x-r.left)/r.width;ly=(window._fire.y-r.top)/r.height;}else{lx+=(tx-lx)*0.10;ly+=(ty-ly)*0.10;}if(rc<3)return;gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tD);gl.uniform1i(uD,0);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tN);gl.uniform1i(uN,1);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,tDp);gl.uniform1i(uDp,2);gl.uniform2f(uL,lx,ly);gl.uniform2f(uR,canvas.width,canvas.height);gl.uniform1f(uTm,performance.now()*0.001);gl.drawArrays(gl.TRIANGLES,0,6);}
+  render();
+})();
+</script>
+
+<!-- TORCH OVERLAY -->
+<div id="torchOverlay"></div>
+<div id="fireCursor">
+  <div class="fire-outer"></div>
+  <div class="fire-mid"></div>
+  <div class="fire-core"></div>
+</div>
+
+<script>
+(function() {
+  // ── TEXT SHADOW PARAMS ─────────────────────────────────────────
+  const S = {
+    maxDist:  1540,  // fire influence radius (px)
+    scale:    8,     // max shadow offset (px)
+    blurMin:  1,     // blur at far distance (px)
+    blurMax:  5,     // blur at close distance (px)
+    alpha:    1.00,  // shadow darkness (0–1)
+    glowBlur: 2,     // warm glow spread (px)
+    glowA:    1.0,   // warm glow opacity (0–1)
+  };
+  // ─────────────────────────────────────────────────────────────────
+
+  const overlay  = document.getElementById('torchOverlay');
+  const cursor   = document.getElementById('fireCursor');
+  const isTouch  = ('ontouchstart' in window);
+
+  let targetX = window.innerWidth  / 2;
+  let targetY = window.innerHeight / 2;
+  let curX    = targetX;
+  let curY    = targetY;
+  let active  = false;
+  let lastT   = performance.now();
+
+  if (isTouch) cursor.style.opacity = '0';
+
+  document.addEventListener('mousemove', (e) => {
+    targetX = e.clientX;
+    targetY = e.clientY;
+    if (!active) { active = true; overlay.style.opacity = '1'; cursor.style.opacity = '1'; }
+  });
+  document.addEventListener('mouseleave', () => {
+    active = false;
+    overlay.style.opacity = '0';
+  });
+
+  let touchOriginX = 0, touchOriginY = 0;
+  const SWIPE_PX = 8;
+
+  document.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchOriginX = t.clientX;
+    touchOriginY = t.clientY;
+    targetX = t.clientX;
+    targetY = t.clientY;
+    cursor.style.opacity = '1';
+    overlay.style.opacity = '1';
+    active = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    targetX = t.clientX;
+    targetY = t.clientY;
+    const dx = t.clientX - touchOriginX;
+    const dy = t.clientY - touchOriginY;
+    if (dx*dx + dy*dy > SWIPE_PX * SWIPE_PX) {
+      curX = t.clientX;
+      curY = t.clientY;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    active = false;
+    cursor.style.opacity = '0';
+    overlay.style.opacity = '0';
+  });
+
+  // Text shadow targets: headings + section labels
+  function updateShadows(mx, my) {
+    const els = document.querySelectorAll('.hero-title, .hero-subtitle, .hero-eyebrow, .hero-meta, .mystery-quote');
+    els.forEach(el => {
+      const r    = el.getBoundingClientRect();
+      const cx   = r.left + r.width  / 2;
+      const cy   = r.top  + r.height / 2;
+      const dx   = cx - mx;
+      const dy   = cy - my;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+      const intensity = Math.max(0, 1 - dist / S.maxDist);
+      const sx = (dx / dist) * S.scale * intensity;
+      const sy = (dy / dist) * S.scale * intensity;
+      const baseShadow = '0 2px 24px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.9)';
+
+      if (intensity > 0.02) {
+        const blur = S.blurMin + (S.blurMax - S.blurMin) * intensity;
+        el.style.textShadow =
+          `${sx.toFixed(1)}px ${sy.toFixed(1)}px ${blur.toFixed(0)}px rgba(0,0,0,${(S.alpha * intensity).toFixed(2)}),` +
+          `0 0 ${(S.glowBlur * intensity).toFixed(0)}px rgba(200,100,0,${(S.glowA * intensity).toFixed(2)}),` +
+          baseShadow;
+      } else {
+        el.style.textShadow = baseShadow;
+      }
+    });
+  }
+
+  function tick(now) {
+    const dt  = Math.min(now - lastT, 50) / 1000;
+    lastT = now;
+    const fac = 1 - Math.exp(-10 * dt);
+    curX += (targetX - curX) * fac;
+    curY += (targetY - curY) * fac;
+
+    // Fire cursor position
+    cursor.style.transform = `translate(${curX.toFixed(1)}px,${curY.toFixed(1)}px)`;
+
+    // Soft warm glow at cursor — screen blend only brightens, never darkens
+    const flicker = 1 + (Math.random() - 0.5) * 0.05;
+    const r = Math.round(480 * flicker);
+    overlay.style.background =
+      `radial-gradient(ellipse ${r}px ${r}px at ${curX.toFixed(0)}px ${curY.toFixed(0)}px,
+        rgba(255, 155, 40, 0.13) 0%,
+        rgba(255, 120, 20, 0.06) 30%,
+        rgba(220, 90,  10, 0.02) 60%,
+        transparent 100%)`;
+
+    window._fire = { x: curX, y: curY };
+    updateShadows(curX, curY);
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
