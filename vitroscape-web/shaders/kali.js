@@ -54,13 +54,10 @@ export const KALI_FRAG = `
         if (d <= 0.0) break;
         col.w = min(col.w, d);
 
-        // Skip this pass entirely when refineAmt is off — uniform branch, no GPU divergence
-        if (uRefineAmt > 0.01) {
-          for (int i = 0; i < 5; ++i) {
-            p = abs(p) / dot(p.xyz, p.xyz);
-            av += p.xyz / (4. + p.w);
-            p.xyz -= uParamFix - uRefineAmt * p.xyz;
-          }
+        for (int i = 0; i < 5; ++i) {
+          p = abs(p) / dot(p.xyz, p.xyz);
+          av += p.xyz / (4. + p.w);
+          p.xyz -= uParamFix - uRefineAmt * p.xyz;
         }
 
         col.xyz += max(av / uAccu0, p.xyz / uAccu1);
