@@ -365,6 +365,52 @@
       text-align: center;
     }
 
+
+    /* ══ MOBILE / SMALL SCREEN ══ */
+    @media (max-width: 768px) {
+      .s1-tagline {
+        font-size: 26px;
+        letter-spacing: 0.03em;
+        margin-bottom: 14px;
+      }
+      .s1-subtitle { font-size: 8.5px; letter-spacing: 0.18em; }
+      #s1-body { top: 40vh; padding: 0 22px; max-width: 100%; }
+      #lang-nav { top: 16px; right: 16px; gap: 12px; }
+      #lang-nav button { font-size: 9px; }
+
+      #project-info {
+        bottom: 16px;
+        width: 92vw;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      #project-title { font-size: 15px; margin-bottom: 4px; }
+      #project-sub   { font-size: 10px; margin-bottom: 5px; }
+      #project-desc  {
+        font-size: 10px;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      #section-panel { display: none; }
+      #scroll-cue    { bottom: 14px; font-size: 8px; }
+
+      #lightbox #lb-inner { max-width: 96vw; }
+      #lb-inner img,
+      #lb-inner video { max-width: 96vw; max-height: 80vh; }
+
+      #loader-num { font-size: 18px; }
+    }
+
+    /* Extra-small phones */
+    @media (max-width: 420px) {
+      .s1-tagline { font-size: 21px; }
+      #project-desc { -webkit-line-clamp: 2; }
+    }
+
   </style>
 </head>
 <body>
@@ -824,7 +870,7 @@ PROJECTS.forEach((proj, i) => {
       const vid = document.createElement('video')
       vid.src = proj.src; vid.muted = true; vid.loop = true
       vid.playsInline = true; vid.setAttribute('playsinline', '')
-      vid.play().catch(() => {})
+      proj._video = vid   // store ref; playback managed in animate()
       texture = new THREE.VideoTexture(vid)
       texture.minFilter = THREE.LinearFilter
       texture.colorSpace = THREE.SRGBColorSpace
@@ -864,7 +910,7 @@ PROJECTS.forEach((proj, i) => {
 // ═══════════════════════════════════════════════════
 //  PARTICLES — structured noise threads inside the helix
 // ═══════════════════════════════════════════════════
-const P_COUNT   = 6420
+const P_COUNT   = window.innerWidth < 768 ? 1200 : 6420
 const THREADS   = 3
 const PER_T     = Math.floor(P_COUNT / THREADS)
 const HSPAN     = N * STEP_Y * 1.5
@@ -1058,9 +1104,10 @@ function resize() {
   helixCam.aspect = window.innerWidth / window.innerHeight
   helixCam.updateProjectionMatrix()
 
-  const kW = Math.round(window.innerWidth  * 1.16)
-  const kH = Math.round(window.innerHeight * 1.16)
-  kaliRenderer.setSize(kW, kH)
+  const kScale = window.innerWidth < 768 ? 0.5 : 1.0   // half-res on mobile
+  const kW = Math.round(window.innerWidth  * 1.16 * kScale)
+  const kH = Math.round(window.innerHeight * 1.16 * kScale)
+  kaliRenderer.setSize(kW, kH, false)   // false = don't override CSS size
   kaliMat.uniforms.uResolution.value.set(kW, kH)
 }
 window.addEventListener('resize', resize)
@@ -1210,6 +1257,17 @@ function animate() {
 
   showInfo(lerpCard)
   updateSectionPanel(Math.round(lerpCard))
+
+  // Video playback — only the active card's video plays; all others are paused
+  const _activeVidIdx = Math.round(lerpCard)
+  PROJECTS.forEach((p, i) => {
+    if (!p._video) return
+    if (i === _activeVidIdx) {
+      if (p._video.paused) p._video.play().catch(() => {})
+    } else {
+      if (!p._video.paused) p._video.pause()
+    }
+  })
 
   // Update particles — noise deforms the spiral threads
   const pt = frame * 0.006
@@ -1550,6 +1608,7 @@ animate()
 
   function openLightbox(proj, idx, cx, cy) {
     lbInner.innerHTML = ''
+    if (proj._video) proj._video.pause()   // free decoder while lightbox plays
     if (proj.isVideo) {
       const vid = document.createElement('video')
       Object.assign(vid, { src: proj.src, loop: true, autoplay: true,
