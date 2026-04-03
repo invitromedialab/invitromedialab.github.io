@@ -1104,7 +1104,7 @@ function resize() {
   helixCam.aspect = window.innerWidth / window.innerHeight
   helixCam.updateProjectionMatrix()
 
-  const kScale = window.innerWidth < 768 ? 0.5 : 1.0   // half-res on mobile
+  const kScale = window.innerWidth < 768 ? 0.5 : 0.75  // 0.75x on desktop → 56% of pixels
   const kW = Math.round(window.innerWidth  * 1.16 * kScale)
   const kH = Math.round(window.innerHeight * 1.16 * kScale)
   kaliRenderer.setSize(kW, kH, false)   // false = don't override CSS size
@@ -1121,6 +1121,7 @@ const s2El     = document.getElementById('s2')
 const s3El     = document.getElementById('s3')
 let frame  = 0
 let isLightboxOpen = false   // when true: all helix videos stay paused
+let _kaliLastScroll = -999   // dirty-flag: skip kali render when nothing changed
 
 function animate() {
   requestAnimationFrame(animate)
@@ -1332,10 +1333,15 @@ function animate() {
   const onS1    = dp < PAGE_H * 1.5 || dp > TOTAL - PAGE_H * 0.5
   const onWorks = dp > PAGE_H * 0.5 && dp < TOTAL - PAGE_H * 0.5
 
-  // Kali: only on S1; throttle to every 2nd frame (static fractal looks fine at 30 fps)
-  if (onS1 && frame % 2 === 0) {
-    kaliRenderer.render(kaliScene, kaliCam)
-    kaliTex.needsUpdate = true
+  // Kali: only on S1; skip when nothing has changed (scroll static + no animation)
+  // Fallback re-render every 90 frames catches any panel param tweaks
+  if (onS1) {
+    const kaliMoved = Math.abs(uScrollVal - _kaliLastScroll) > 0.001
+    if (kaliMoved || KALI.animate || frame % 90 === 0) {
+      _kaliLastScroll = uScrollVal
+      kaliRenderer.render(kaliScene, kaliCam)
+      kaliTex.needsUpdate = true
+    }
   }
 
   // Logo: only on S1
