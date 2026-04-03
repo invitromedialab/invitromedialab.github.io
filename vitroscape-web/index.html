@@ -374,7 +374,7 @@
         margin-bottom: 14px;
       }
       .s1-subtitle { font-size: 8.5px; letter-spacing: 0.18em; }
-      #s1-body { top: 40vh; padding: 0 22px; max-width: 100%; }
+      #s1-body { top: 60vh; padding: 0 22px; }
       #lang-nav { top: 16px; right: 16px; gap: 12px; }
       #lang-nav button { font-size: 9px; }
 
@@ -1120,6 +1120,7 @@ const sIntroEl = document.getElementById('s-intro')
 const s2El     = document.getElementById('s2')
 const s3El     = document.getElementById('s3')
 let frame  = 0
+let isLightboxOpen = false   // when true: all helix videos stay paused
 
 function animate() {
   requestAnimationFrame(animate)
@@ -1258,16 +1259,20 @@ function animate() {
   showInfo(lerpCard)
   updateSectionPanel(Math.round(lerpCard))
 
-  // Video playback — only the active card's video plays; all others are paused
-  const _activeVidIdx = Math.round(lerpCard)
-  PROJECTS.forEach((p, i) => {
-    if (!p._video) return
-    if (i === _activeVidIdx) {
-      if (p._video.paused) p._video.play().catch(() => {})
-    } else {
-      if (!p._video.paused) p._video.pause()
-    }
-  })
+  // Video playback — all paused while lightbox is open; otherwise only active card plays
+  if (isLightboxOpen) {
+    PROJECTS.forEach(p => { if (p._video && !p._video.paused) p._video.pause() })
+  } else {
+    const _activeVidIdx = Math.round(lerpCard)
+    PROJECTS.forEach((p, i) => {
+      if (!p._video) return
+      if (i === _activeVidIdx) {
+        if (p._video.paused) p._video.play().catch(() => {})
+      } else {
+        if (!p._video.paused) p._video.pause()
+      }
+    })
+  }
 
   // Update particles — noise deforms the spiral threads
   const pt = frame * 0.006
@@ -1607,8 +1612,8 @@ animate()
   }
 
   function openLightbox(proj, idx, cx, cy) {
+    isLightboxOpen = true
     lbInner.innerHTML = ''
-    if (proj._video) proj._video.pause()   // free decoder while lightbox plays
     if (proj.isVideo) {
       const vid = document.createElement('video')
       Object.assign(vid, { src: proj.src, loop: true, autoplay: true,
@@ -1631,6 +1636,7 @@ animate()
 
   function closeLightbox() {
     if (lbOpenIdx === -1) return
+    isLightboxOpen = false
     lbEl.classList.remove('lb-open')
     lbOpenIdx = -1
     if (lbMediaEl) { lbMediaEl.pause(); lbMediaEl = null }
