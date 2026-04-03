@@ -36,13 +36,13 @@ export const KALI_FRAG = `
       vec4 col  = vec4(0., 0., 0., 1.);
       float t = 0., pln = 16.;
 
-      for (int k = 0; k < 35; ++k) {
+      for (int k = 0; k < 20; ++k) {
         vec4 p     = vec4(pos + t * dir, 1.);
         vec3 param = mix(uParam0, uParam1, mph);
 
         float d = uDistInit;
         vec3 av = vec3(0.);
-        for (int i = 0; i < 11; ++i) {
+        for (int i = 0; i < 8; ++i) {
           p = abs(p) / dot(p.xyz, p.xyz);
           d = min(d, mix(p.x + p.y + p.z, length(p.xy), mph) / p.w);
           if (i == 1) pln = min(pln, dot(p.xyz, vec3(0., 0., 1.)) / p.w);

@@ -1274,23 +1274,22 @@ function animate() {
     })
   }
 
-  // Update particles — noise deforms the spiral threads
-  const pt = frame * 0.006
-  for (let i = 0; i < P_COUNT; i++) {
-    const sa = pBase[i * 3]          // base spiral angle
-    const t  = pBase[i * 3 + 1]      // 0→1 along height
-    const br = pBase[i * 3 + 2]      // base radius
-    // Slow time-varying twist of spiral angle
-    const twistAngle = sa + pt * 0.18 + 0.35 * Math.sin(pt * 0.4 + pNoiseOff[i * 3 + 2])
-    // Noise breathes the radius in/out
-    const r  = br + 0.22 * Math.sin(pt * 0.9 + pNoiseOff[i * 3] + t * 3.0)
-    // Height: fixed relative to group, small vertical wobble from noise
-    const y  = (t - 0.5) * HSPAN + 0.18 * Math.sin(pt * 0.7 + pNoiseOff[i * 3 + 1] + t * 2.0)
-    pPosArr[i * 3]     = r * Math.cos(twistAngle)
-    pPosArr[i * 3 + 1] = y
-    pPosArr[i * 3 + 2] = r * Math.sin(twistAngle)
+  // Update particles every 2nd frame — 30 fps is indistinguishable for slow noise motion
+  if (frame % 2 === 0) {
+    const pt = frame * 0.006
+    for (let i = 0; i < P_COUNT; i++) {
+      const sa = pBase[i * 3]
+      const t  = pBase[i * 3 + 1]
+      const br = pBase[i * 3 + 2]
+      const twistAngle = sa + pt * 0.18 + 0.35 * Math.sin(pt * 0.4 + pNoiseOff[i * 3 + 2])
+      const r  = br + 0.22 * Math.sin(pt * 0.9 + pNoiseOff[i * 3] + t * 3.0)
+      const y  = (t - 0.5) * HSPAN + 0.18 * Math.sin(pt * 0.7 + pNoiseOff[i * 3 + 1] + t * 2.0)
+      pPosArr[i * 3]     = r * Math.cos(twistAngle)
+      pPosArr[i * 3 + 1] = y
+      pPosArr[i * 3 + 2] = r * Math.sin(twistAngle)
+    }
+    pPosAttr.needsUpdate = true
   }
-  pPosAttr.needsUpdate = true
 
   // Logo: rotation + particle update
   const rotT = Math.max(-1, Math.min(1, -s1Yt / PAGE_H))  // -1=came from below, 0=centred, 1=gone up
@@ -1328,12 +1327,27 @@ function animate() {
   kaliMat.uniforms.uEdgeInvert.value  = KALI.edgeInvert
   kaliMat.uniforms.uHueShift.value    = KALI.hueShift
   kaliCanvas.style.transform = `translateY(${s1Yt}px)`  // slides with S1
-  kaliRenderer.render(kaliScene, kaliCam)
-  kaliTex.needsUpdate = true
-  logoCanvas.style.opacity = 1
-  logoRenderer.render(logoScene, logoCam)
 
-  helixRenderer.render(helixScene, helixCam)
+  // Only render each pass when its content is actually on screen
+  const onS1    = dp < PAGE_H * 1.5 || dp > TOTAL - PAGE_H * 0.5
+  const onWorks = dp > PAGE_H * 0.5 && dp < TOTAL - PAGE_H * 0.5
+
+  // Kali: only on S1; throttle to every 2nd frame (static fractal looks fine at 30 fps)
+  if (onS1 && frame % 2 === 0) {
+    kaliRenderer.render(kaliScene, kaliCam)
+    kaliTex.needsUpdate = true
+  }
+
+  // Logo: only on S1
+  if (onS1) {
+    logoCanvas.style.opacity = 1
+    logoRenderer.render(logoScene, logoCam)
+  }
+
+  // Helix: only on works sections
+  if (onWorks) {
+    helixRenderer.render(helixScene, helixCam)
+  }
 }
 
 // ═══════════════════════════════════════════════════
