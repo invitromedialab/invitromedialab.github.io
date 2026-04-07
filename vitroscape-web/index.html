@@ -1104,9 +1104,10 @@ function resize() {
   helixCam.aspect = window.innerWidth / window.innerHeight
   helixCam.updateProjectionMatrix()
 
-  const kScale = window.innerWidth < 768 ? 0.5 : 0.75  // 0.75x on desktop → 56% of pixels
-  const kW = Math.round(window.innerWidth  * 1.16 * kScale)
-  const kH = Math.round(window.innerHeight * 1.16 * kScale)
+  // Render kali at low resolution; CSS (width/height: 116%) handles the upscale
+  const kRender = window.innerWidth < 768 ? 0.3 : 0.4
+  const kW = Math.min(Math.round(window.innerWidth  * kRender), 960)
+  const kH = Math.min(Math.round(window.innerHeight * kRender), 540)
   kaliRenderer.setSize(kW, kH, false)   // false = don't override CSS size
   kaliMat.uniforms.uResolution.value.set(kW, kH)
 }
