@@ -728,6 +728,40 @@
     line-height: 1.6;
   }
 
+  /* ── STUDIO BRAND ── */
+  .studio-brand {
+    text-align: center;
+    padding: 2rem 0 1rem;
+  }
+  .studio-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.8rem, 13vw, 8rem);
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    text-indent: 0.16em;
+    line-height: 1;
+    color: #fff;
+    margin: 0 0 1.8rem;
+  }
+  .studio-tagline {
+    font-size: clamp(0.66rem, 1.8vw, 0.9rem);
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.4rem;
+  }
+  .studio-mission {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(1.1rem, 3vw, 1.7rem);
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+
   /* ── INVESTMENT ── */
   .invest-phase {
     border: 1px solid var(--border);
@@ -917,7 +951,7 @@
     <li><a href="#replicability">Scalability</a></li>
     <li><a href="#academic">Academic</a></li>
     <li><a href="#timing">Timing</a></li>
-    <li><a href="#team">Team</a></li>
+    <li><a href="#team">Studio</a></li>
   </ul>
   <div class="lang-switch">
     <a href="../cn/">中</a><span>|</span><a href="../en/" class="active">EN</a><span>|</span><a href="../fr/">FR</a>
@@ -941,7 +975,7 @@
     <p class="section-label">Project Overview</p>
     <h2>One System, Infinite Narratives</h2>
 
-    <p class="lead">Immersion Rupestre is an immersive installation themed around French prehistoric cave paintings, designed for commercial spaces, museums, and cultural tourism venues.</p>
+    <p class="lead">Immersion Rupestre is an immersive experience themed around French prehistoric cave paintings, designed for commercial spaces, museums, and cultural tourism venues.</p>
 
     <p>At its core is a custom spatial sensing and projection system that tracks each oil lamp's position in real time, driving dynamic projection lighting and responsive content. The hardware and software architecture is built once and reused across deployments, with content replaced per project to support multi-venue replication.</p>
 
@@ -1291,27 +1325,13 @@
   </div>
 </section>
 
-<!-- TEAM -->
+<!-- STUDIO -->
 <section id="team">
   <div class="container">
-    <p class="section-label">Team</p>
-    <h2>Creative & Academic</h2>
-
-    <div class="team-grid">
-      <div class="team-item">
-        <div class="team-role">Content Production</div>
-        <div>
-          <div class="team-name">In Vitro</div>
-          <p class="team-desc">Responsible for digital content, interactive systems, and overall experience design, with multiple deployed immersive installation projects.</p>
-        </div>
-      </div>
-      <div class="team-item">
-        <div class="team-role">Academic Liaison</div>
-        <div>
-          <div class="team-name">Li Bing</div>
-          <p class="team-desc">Postdoctoral researcher in cognitive science and psychology at the Université de Lille; responsible for engagement with French universities and research institutions.</p>
-        </div>
-      </div>
+    <div class="studio-brand">
+      <h2 class="studio-name">VITROSCAPE</h2>
+      <p class="studio-tagline">Immersive Hybrid Realities Studio</p>
+      <p class="studio-mission">Reshaping Public Spaces through Imagination</p>
     </div>
   </div>
 </section>

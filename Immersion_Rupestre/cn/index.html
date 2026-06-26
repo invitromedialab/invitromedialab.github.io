@@ -728,6 +728,40 @@
     line-height: 1.6;
   }
 
+  /* ── STUDIO BRAND ── */
+  .studio-brand {
+    text-align: center;
+    padding: 2rem 0 1rem;
+  }
+  .studio-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.8rem, 13vw, 8rem);
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    text-indent: 0.16em;
+    line-height: 1;
+    color: #fff;
+    margin: 0 0 1.8rem;
+  }
+  .studio-tagline {
+    font-size: clamp(0.66rem, 1.8vw, 0.9rem);
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.4rem;
+  }
+  .studio-mission {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(1.1rem, 3vw, 1.7rem);
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+
   /* ── INVESTMENT ── */
   .invest-phase {
     border: 1px solid var(--border);
@@ -918,7 +952,7 @@
     <li><a href="#replicability">可复制</a></li>
     <li><a href="#academic">学术</a></li>
     <li><a href="#timing">时机</a></li>
-    <li><a href="#team">团队</a></li>
+    <li><a href="#team">工作室</a></li>
   </ul>
   <div class="lang-switch">
     <a href="../cn/" class="active">中</a><span>|</span><a href="../en/">EN</a><span>|</span><a href="../fr/">FR</a>
@@ -1292,27 +1326,13 @@
   </div>
 </section>
 
-<!-- TEAM -->
+<!-- STUDIO -->
 <section id="team">
   <div class="container">
-    <p class="section-label">团队</p>
-    <h2>创作与学术</h2>
-
-    <div class="team-grid">
-      <div class="team-item">
-        <div class="team-role">内容制作</div>
-        <div>
-          <div class="team-name">In Vitro</div>
-          <p class="team-desc">负责数字内容、互动系统和整体体验设计，有多个沉浸式装置的落地经验。</p>
-        </div>
-      </div>
-      <div class="team-item">
-        <div class="team-role">学术联络</div>
-        <div>
-          <div class="team-name">李兵</div>
-          <p class="team-desc">里尔大学（Université de Lille）认知与心理方向博士后，负责与法国高校和研究机构的对接。</p>
-        </div>
-      </div>
+    <div class="studio-brand">
+      <h2 class="studio-name">VITROSCAPE</h2>
+      <p class="studio-tagline">Immersive Hybrid Realities Studio</p>
+      <p class="studio-mission">Reshaping Public Spaces through Imagination</p>
     </div>
   </div>
 </section>
